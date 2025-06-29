@@ -12,16 +12,11 @@ import {
 import RewindableSprite, { TimeMode } from "../components/RewindableSprite";
 import EnergyCrystal from "./EnergyCrystal";
 import { DEBUG } from "../main";
+import ConfigSystem, { EnemyTypeConfig } from "../systems/ConfigSystem";
 /* END-USER-IMPORTS */
 
-// Enemy type definitions
-export interface EnemyTypeConfig {
-  name: string;
-  speed: number;
-  maxHp: number;
-  tintColor: number;
-}
-
+// Enemy type definitions - now imported from ConfigSystem
+// Legacy export for backward compatibility
 export const ENEMY_TYPES: Record<string, EnemyTypeConfig> = {
   BASIC: {
     name: "Basic",
@@ -131,7 +126,22 @@ export default class Enemy extends RewindableSprite {
    */
   private initializeEnemyType(type: string): void {
     this.enemyType = type;
-    this.enemyConfig = ENEMY_TYPES[type] || ENEMY_TYPES.BASIC;
+
+    // Try to get enemy types from ConfigSystem if available
+    let enemyTypes = ENEMY_TYPES; // fallback to legacy types
+
+    // Check if scene has a getConfigSystem method (Level scene)
+    if (
+      this.scene &&
+      typeof (this.scene as any).getConfigSystem === "function"
+    ) {
+      const configSystem = (this.scene as any).getConfigSystem();
+      if (configSystem) {
+        enemyTypes = configSystem.getEnemyTypesConfig();
+      }
+    }
+
+    this.enemyConfig = enemyTypes[type] || enemyTypes.BASIC;
 
     // Apply type characteristics
     this.speed = this.enemyConfig.speed;

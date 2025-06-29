@@ -4,6 +4,7 @@ import Preload from "./scenes/Preload";
 import Title from "./scenes/Title";
 import Configure from "./scenes/Configure";
 import { HMRHelper } from "./utils/hmr";
+import GlobalKeyHandler from "./utils/GlobalKeyHandler";
 
 export const DEBUG = false;
 
@@ -55,11 +56,21 @@ const gameConfig: Phaser.Types.Core.GameConfig = {
 function startGame() {
   // Destroy existing game instance if it exists (for HMR)
   if ((window as any).game) {
+    // Destroy global key handler if it exists
+    if ((window as any).globalKeyHandler) {
+      (window as any).globalKeyHandler.destroy();
+    }
     (window as any).game.destroy(true);
   }
 
   (window as any).game = new Phaser.Game(gameConfig);
   HMRHelper.setGameInstance((window as any).game);
+
+  // Initialize global key handler
+  (window as any).globalKeyHandler = GlobalKeyHandler.initialize(
+    (window as any).game
+  );
+
   (window as any).game.scene.start("Boot");
 }
 

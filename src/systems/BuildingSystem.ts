@@ -1,5 +1,6 @@
 import BasicTower from "../prefabs/BasicTower";
 import EnergySystem from "./EnergySystem";
+import ConfigSystem from "./ConfigSystem";
 
 // Building types enum for extensibility
 export enum BuildingType {
@@ -86,6 +87,25 @@ export class BuildingManager {
   }
 
   /**
+   * Get building configurations from ConfigSystem or fallback to registry
+   */
+  private getBuildingConfigs(): Record<string, BuildingConfig> {
+    // Try to get building configs from ConfigSystem if available
+    if (
+      this.scene &&
+      typeof (this.scene as any).getConfigSystem === "function"
+    ) {
+      const configSystem = (this.scene as any).getConfigSystem();
+      if (configSystem) {
+        return configSystem.getBuildingsConfig();
+      }
+    }
+
+    // Fallback to legacy registry
+    return BUILDING_REGISTRY;
+  }
+
+  /**
    * Set the energy system for building cost management
    */
   public setEnergySystem(energySystem: EnergySystem): void {
@@ -160,7 +180,8 @@ export class BuildingManager {
       return null;
     }
 
-    const config = BUILDING_REGISTRY[buildingType];
+    const buildingConfigs = this.getBuildingConfigs();
+    const config = buildingConfigs[buildingType];
     if (!config) {
       console.error(`Unknown building type: ${buildingType}`);
       return null;

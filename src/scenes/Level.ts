@@ -22,7 +22,7 @@ import GoalHPBar from "../ui/GoalHPBar";
 import GameOverOverlay from "../ui/GameOverOverlay";
 import WaveStartOverlay from "../ui/WaveStartOverlay";
 import CongratulationsOverlay from "../ui/CongratulationsOverlay";
-import { TEST_WAVES, SAMPLE_WAVES } from "../config/waves";
+import ConfigSystem from "../systems/ConfigSystem";
 /* END-USER-IMPORTS */
 
 export default class Level extends Phaser.Scene {
@@ -161,6 +161,7 @@ export default class Level extends Phaser.Scene {
   private goal!: Goal;
   private enemySpawner!: EnemySpawner;
   private isGameOver: boolean = false;
+  private configSystem!: ConfigSystem;
 
   // Display layers for proper rendering order (bottom to top):
   // groundLayer: Background elements, terrain decorations
@@ -189,6 +190,9 @@ export default class Level extends Phaser.Scene {
     // Initialize input manager
     this.inputManager = new InputManager(this);
 
+    // Initialize configuration system
+    this.configSystem = new ConfigSystem();
+
     // Create display layers in proper order (bottom to top)
     this.groundLayer = this.add.group();
     this.buildingLayer = this.add.group();
@@ -206,6 +210,10 @@ export default class Level extends Phaser.Scene {
         // Player should be in the top layer (uiLayer) with highest depth
         this.uiLayer.add(child);
         child.setDepth(Level.DEPTH_UI);
+
+        // Configure player speed from config
+        const playerConfig = this.configSystem.getPlayerConfig();
+        child.setSpeed(playerConfig.speed);
       } else if (child instanceof Enemy) {
         // Set enemy to building depth and give it a target to demonstrate walking
         child.setDepth(Level.DEPTH_BUILDINGS);
@@ -283,11 +291,8 @@ export default class Level extends Phaser.Scene {
     this.createRewindIndicator();
 
     // Initialize energy system
-    this.energySystem = new EnergySystem(this, {
-      maxEnergy: 100,
-      regenerationRate: 20, // 1 energy every x frames
-      initialEnergy: 100,
-    });
+    const energyConfig = this.configSystem.getEnergyConfig();
+    this.energySystem = new EnergySystem(this, energyConfig);
 
     // Create energy bar UI
     const energyBarX = 10; // Left side of screen with padding
@@ -302,9 +307,10 @@ export default class Level extends Phaser.Scene {
     this.uiLayer.add(this.energyBar);
 
     // Initialize Goal HP system
+    const goalConfig = this.configSystem.getGoalConfig();
     this.goalHPSystem = new GoalHPSystem({
-      maxHP: 100,
-      initialHP: 100,
+      maxHP: goalConfig.maxHP,
+      initialHP: goalConfig.initialHP,
     });
 
     // Create Goal HP bar UI (on the right side of screen)
@@ -840,6 +846,14 @@ export default class Level extends Phaser.Scene {
   }
 
   /**
+   * Get the configuration system instance
+   * Public method for external access
+   */
+  public getConfigSystem(): ConfigSystem | null {
+    return this.configSystem || null;
+  }
+
+  /**
    * Load default wave configuration and start wave system
    */
   private loadDefaultWaves(): void {
@@ -848,8 +862,9 @@ export default class Level extends Phaser.Scene {
       return;
     }
 
-    // Load test waves for development (change to SAMPLE_WAVES for full game)
-    this.enemySpawner.loadWaves(TEST_WAVES);
+    // Load waves from configuration
+    const wavesConfig = this.configSystem.getWavesConfig();
+    this.enemySpawner.loadWaves(wavesConfig);
 
     // Subscribe to wave start events to show overlay BEFORE starting waves
     const waveSystem = this.enemySpawner.getWaveSystem();
@@ -879,18 +894,18 @@ export default class Level extends Phaser.Scene {
   }
 
   /**
-   * Load and start specific wave configuration
-   * Call from console: game.scene.getScene('Level').loadWaves('test'|'sample')
+   * Load and start wave configuration
+   * Call from console: game.scene.getScene('Level').loadWaves()
    */
-  public loadWaves(waveSet: "test" | "sample" = "test"): void {
+  public loadWaves(): void {
     if (!this.enemySpawner) {
       console.warn("Enemy spawner not initialized - cannot load waves");
       return;
     }
 
-    const waves = waveSet === "sample" ? SAMPLE_WAVES : TEST_WAVES;
+    const wavesConfig = this.configSystem.getWavesConfig();
     this.enemySpawner.stopWaves();
-    this.enemySpawner.loadWaves(waves);
+    this.enemySpawner.loadWaves(wavesConfig);
 
     // Subscribe to wave start events to show overlay BEFORE starting waves
     const waveSystem = this.enemySpawner.getWaveSystem();
@@ -915,7 +930,7 @@ export default class Level extends Phaser.Scene {
 
     this.enemySpawner.startWaves();
 
-    console.log(`${waveSet} waves loaded and started`);
+    console.log("Waves loaded and started");
   }
 
   /**

@@ -10,6 +10,8 @@
  */
 
 import InputManager from "../components/InputManager";
+import ConfigModal from "../ui/ConfigModal";
+import ConfigSystem from "../systems/ConfigSystem";
 
 export default class Title extends Phaser.Scene {
   private inputManager!: InputManager;
@@ -30,6 +32,10 @@ export default class Title extends Phaser.Scene {
   // Animation tweens
   private titlePulseTween?: Phaser.Tweens.Tween;
 
+  // Configuration system
+  private configSystem!: ConfigSystem;
+  private configModal?: ConfigModal;
+
   constructor() {
     super("Title");
   }
@@ -37,6 +43,9 @@ export default class Title extends Phaser.Scene {
   create() {
     // Initialize input manager
     this.inputManager = new InputManager(this);
+
+    // Initialize configuration system
+    this.configSystem = new ConfigSystem();
 
     // Create background
     this.createBackground();
@@ -263,15 +272,19 @@ export default class Title extends Phaser.Scene {
    * Handle CONFIGURE button action
    */
   private handleConfigure(): void {
-    console.log("Opening configure screen...");
+    console.log("Opening configuration modal...");
 
-    // Stop animations
-    if (this.titlePulseTween) {
-      this.titlePulseTween.destroy();
+    // Create config modal if it doesn't exist
+    if (!this.configModal) {
+      this.configModal = new ConfigModal(this.configSystem);
     }
 
-    // Transition to Configure scene (placeholder)
-    this.scene.start("Configure");
+    // Show the configuration modal
+    this.configModal.show(() => {
+      console.log("Configuration saved from Title screen");
+      // Optionally restart the game or just close the modal
+      // The modal will handle the restart automatically
+    });
   }
 
   /**

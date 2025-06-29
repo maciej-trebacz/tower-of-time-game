@@ -3,6 +3,7 @@
 /* START OF COMPILED CODE */
 
 /* START-USER-IMPORTS */
+import ConfigSystem from "../systems/ConfigSystem";
 /* END-USER-IMPORTS */
 
 export default class EnergyCrystal extends Phaser.GameObjects.Sprite {
@@ -29,9 +30,9 @@ export default class EnergyCrystal extends Phaser.GameObjects.Sprite {
   private lifetimeTimer?: Phaser.Time.TimerEvent;
   private flashTween?: Phaser.Tweens.Tween;
 
-  // Timing constants
-  private readonly LIFETIME_DURATION = 8000; // 15 seconds in milliseconds
-  private readonly WARNING_DURATION = 4000; // 5 seconds warning before disappearing
+  // Timing constants - will be set from ConfigSystem
+  private lifetimeDuration: number = 8000; // milliseconds
+  private warningDuration: number = 4000; // warning before disappearing
 
   /**
    * Initialize the energy crystal with visual effects
@@ -39,6 +40,20 @@ export default class EnergyCrystal extends Phaser.GameObjects.Sprite {
   private initializeEnergyCrystal(): void {
     // Set origin to center for better rotation and scaling
     this.setOrigin(0.5, 0.5);
+
+    // Load configuration from ConfigSystem if available
+    if (
+      this.scene &&
+      typeof (this.scene as any).getConfigSystem === "function"
+    ) {
+      const configSystem = (this.scene as any).getConfigSystem();
+      if (configSystem) {
+        const crystalConfig = configSystem.getEnergyCrystalConfig();
+        this.energyValue = crystalConfig.energyValue;
+        this.lifetimeDuration = crystalConfig.lifetimeDuration;
+        this.warningDuration = crystalConfig.warningDuration;
+      }
+    }
 
     // Add a subtle floating animation
     this.createFloatingAnimation();
@@ -50,7 +65,7 @@ export default class EnergyCrystal extends Phaser.GameObjects.Sprite {
     this.startLifetimeTimer();
 
     console.log(
-      `EnergyCrystal created at (${this.x}, ${this.y}) with ${this.energyValue} energy`
+      `EnergyCrystal created at (${this.x}, ${this.y}) with ${this.energyValue} energy, lifetime=${this.lifetimeDuration}ms`
     );
   }
 
@@ -178,8 +193,8 @@ export default class EnergyCrystal extends Phaser.GameObjects.Sprite {
    * Start the lifetime timer for the crystal
    */
   private startLifetimeTimer(): void {
-    // Set up warning timer (starts flashing 5 seconds before disappearing)
-    const warningTime = this.LIFETIME_DURATION - this.WARNING_DURATION;
+    // Set up warning timer (starts flashing before disappearing)
+    const warningTime = this.lifetimeDuration - this.warningDuration;
 
     this.scene.time.delayedCall(warningTime, () => {
       if (!this.isCollected && this.active) {
@@ -189,7 +204,7 @@ export default class EnergyCrystal extends Phaser.GameObjects.Sprite {
 
     // Set up destruction timer (crystal disappears after full lifetime)
     this.lifetimeTimer = this.scene.time.delayedCall(
-      this.LIFETIME_DURATION,
+      this.lifetimeDuration,
       () => {
         if (!this.isCollected && this.active) {
           this.expireNaturally();

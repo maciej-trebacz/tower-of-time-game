@@ -13,10 +13,12 @@ export default class CongratulationsOverlay extends Phaser.GameObjects
   private background: Phaser.GameObjects.Rectangle;
   private titleText: Phaser.GameObjects.Text;
   private subtitleText: Phaser.GameObjects.Text;
+  private instructionText: Phaser.GameObjects.Text;
   private isVisible: boolean = false;
   private fadeInDuration: number = 800; // 0.8 seconds
   private celebrationParticles: Phaser.GameObjects.Particles.ParticleEmitter[] =
     [];
+  private inputListener?: (event: KeyboardEvent) => void;
 
   constructor(scene: Phaser.Scene) {
     super(scene, 0, 0);
@@ -66,8 +68,29 @@ export default class CongratulationsOverlay extends Phaser.GameObjects
     );
     this.subtitleText.setOrigin(0.5, 0.5);
 
+    // Create instruction text
+    this.instructionText = scene.add.text(
+      scene.scale.width / 2,
+      scene.scale.height / 2 + 120,
+      "Press any key to return to Title screen",
+      {
+        fontSize: "20px",
+        fontFamily: "Arial, sans-serif",
+        color: "#cccccc",
+        stroke: "#000000",
+        strokeThickness: 2,
+        align: "center",
+      }
+    );
+    this.instructionText.setOrigin(0.5, 0.5);
+
     // Add to container
-    this.add([this.background, this.titleText, this.subtitleText]);
+    this.add([
+      this.background,
+      this.titleText,
+      this.subtitleText,
+      this.instructionText,
+    ]);
 
     // Set high depth to appear above everything
     this.setDepth(1100); // Higher than wave start overlay
@@ -101,9 +124,16 @@ export default class CongratulationsOverlay extends Phaser.GameObjects
       this.scene.scale.width / 2,
       this.scene.scale.height / 2 + 40
     );
+    this.instructionText.setPosition(
+      this.scene.scale.width / 2,
+      this.scene.scale.height / 2 + 120
+    );
 
     this.isVisible = true;
     this.setVisible(true);
+
+    // Set up input handling
+    this.setupInputHandling();
 
     // Start celebration effects
     this.startCelebrationEffects();
@@ -152,6 +182,77 @@ export default class CongratulationsOverlay extends Phaser.GameObjects
   }
 
   /**
+   * Set up input handling to return to Title screen
+   */
+  private setupInputHandling(): void {
+    // Remove any existing listener
+    this.removeInputHandling();
+
+    // Create new listener
+    this.inputListener = (event: KeyboardEvent) => {
+      // Ignore if modal is open or typing in input
+      if (this.isTypingInInput(event.target)) {
+        return;
+      }
+
+      // Any key press returns to Title screen
+      console.log("Key pressed on congratulations screen, returning to Title");
+      this.returnToTitle();
+    };
+
+    // Add listener
+    document.addEventListener("keydown", this.inputListener);
+
+    // Also handle mouse clicks on the background
+    this.background.setInteractive();
+    this.background.once("pointerdown", () => {
+      console.log("Click on congratulations screen, returning to Title");
+      this.returnToTitle();
+    });
+  }
+
+  /**
+   * Remove input handling
+   */
+  private removeInputHandling(): void {
+    if (this.inputListener) {
+      document.removeEventListener("keydown", this.inputListener);
+      this.inputListener = undefined;
+    }
+
+    // Remove background interactivity
+    this.background.disableInteractive();
+  }
+
+  /**
+   * Check if user is typing in an input field
+   */
+  private isTypingInInput(target: EventTarget | null): boolean {
+    if (!target) return false;
+
+    const element = target as HTMLElement;
+    const tagName = element.tagName.toLowerCase();
+
+    return (
+      tagName === "input" ||
+      tagName === "textarea" ||
+      element.contentEditable === "true"
+    );
+  }
+
+  /**
+   * Return to Title screen
+   */
+  private returnToTitle(): void {
+    this.removeInputHandling();
+
+    this.hide(() => {
+      // Return to Title screen
+      this.scene.scene.start("Title");
+    });
+  }
+
+  /**
    * Hide the overlay with animation
    * @param onComplete Optional callback when hide animation completes
    */
@@ -162,6 +263,9 @@ export default class CongratulationsOverlay extends Phaser.GameObjects
     }
 
     this.isVisible = false;
+
+    // Remove input handling
+    this.removeInputHandling();
 
     // Stop celebration effects
     this.stopCelebrationEffects();

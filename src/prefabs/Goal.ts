@@ -5,6 +5,7 @@
 /* START-USER-IMPORTS */
 import Enemy from "./Enemy";
 import GoalHPSystem from "../systems/GoalHPSystem";
+import ConfigSystem from "../systems/ConfigSystem";
 /* END-USER-IMPORTS */
 
 export default class Goal extends Phaser.GameObjects.Sprite {
@@ -31,10 +32,10 @@ export default class Goal extends Phaser.GameObjects.Sprite {
   private attackTimers: Map<Enemy, Phaser.Time.TimerEvent> = new Map();
   private hitFlashTween?: Phaser.Tweens.Tween;
 
-  // Goal configuration
-  private readonly COLLISION_RADIUS = 30; // Distance at which enemies can attack
-  private readonly ATTACK_DAMAGE = 5;
-  private readonly ATTACK_INTERVAL = 1000; // 1 second in milliseconds
+  // Goal configuration - will be set from ConfigSystem
+  private collisionRadius: number = 30; // Distance at which enemies can attack
+  private attackDamage: number = 5;
+  private attackInterval: number = 1000; // 1 second in milliseconds
 
   /**
    * Initialize the goal with HP system
@@ -43,7 +44,24 @@ export default class Goal extends Phaser.GameObjects.Sprite {
     // Set origin to center for better collision detection
     this.setOrigin(0.5, 0.5);
 
+    // Load configuration from ConfigSystem if available
+    if (
+      this.scene &&
+      typeof (this.scene as any).getConfigSystem === "function"
+    ) {
+      const configSystem = (this.scene as any).getConfigSystem();
+      if (configSystem) {
+        const goalConfig = configSystem.getGoalConfig();
+        this.collisionRadius = goalConfig.collisionRadius;
+        this.attackDamage = goalConfig.attackDamage;
+        this.attackInterval = goalConfig.attackInterval;
+      }
+    }
+
     console.log("Goal initialized at", this.x, this.y);
+    console.log(
+      `Goal config: collision radius=${this.collisionRadius}, attack damage=${this.attackDamage}, attack interval=${this.attackInterval}`
+    );
   }
 
   /**
@@ -85,7 +103,7 @@ export default class Goal extends Phaser.GameObjects.Sprite {
         enemy.y
       );
 
-      if (distance <= this.COLLISION_RADIUS) {
+      if (distance <= this.collisionRadius) {
         // Enemy is in attack range
         if (!this.attackingEnemies.has(enemy)) {
           this.startEnemyAttack(enemy);
@@ -114,7 +132,7 @@ export default class Goal extends Phaser.GameObjects.Sprite {
 
     // Create attack timer for this enemy
     const attackTimer = this.scene.time.addEvent({
-      delay: this.ATTACK_INTERVAL,
+      delay: this.attackInterval,
       callback: () => this.enemyAttack(enemy),
       loop: true,
     });
@@ -165,20 +183,20 @@ export default class Goal extends Phaser.GameObjects.Sprite {
       enemy.y
     );
 
-    if (distance > this.COLLISION_RADIUS) {
+    if (distance > this.collisionRadius) {
       this.stopEnemyAttack(enemy);
       return;
     }
 
     // Deal damage to goal
     const damageDealt = this.goalHPSystem.takeDamage(
-      this.ATTACK_DAMAGE,
+      this.attackDamage,
       "enemy_attack"
     );
 
     if (damageDealt) {
       this.showHitEffect();
-      console.log(`Goal took ${this.ATTACK_DAMAGE} damage from enemy attack`);
+      console.log(`Goal took ${this.attackDamage} damage from enemy attack`);
     }
   }
 
@@ -219,7 +237,7 @@ export default class Goal extends Phaser.GameObjects.Sprite {
    * Get the collision radius for debugging
    */
   public getCollisionRadius(): number {
-    return this.COLLISION_RADIUS;
+    return this.collisionRadius;
   }
 
   /**
