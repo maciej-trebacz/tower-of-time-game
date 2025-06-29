@@ -1,6 +1,8 @@
 import Phaser from "phaser";
 import Level from "./scenes/Level";
 import Preload from "./scenes/Preload";
+import Title from "./scenes/Title";
+import Configure from "./scenes/Configure";
 import { HMRHelper } from "./utils/hmr";
 
 export const DEBUG = false;
@@ -34,7 +36,7 @@ const gameConfig: Phaser.Types.Core.GameConfig = {
     mode: Phaser.Scale.ScaleModes.FIT,
     autoCenter: Phaser.Scale.Center.CENTER_BOTH,
   },
-  scene: [Boot, Preload, Level],
+  scene: [Boot, Title, Configure, Preload, Level],
   antialias: false,
   pixelArt: true,
   input: {

@@ -1,4 +1,3 @@
-
 // You can write more code here
 
 /* START OF COMPILED CODE */
@@ -12,33 +11,28 @@ export default class Preload extends Phaser.Scene {
 		super("Preload");
 
 		/* START-USER-CTR-CODE */
-		// Write your code here.
-		/* END-USER-CTR-CODE */
+    // Write your code here.
+    /* END-USER-CTR-CODE */
 	}
 
 	editorCreate(): void {
 
-		// guapen
-		const guapen = this.add.image(505.0120544433594, 360, "guapen");
-		guapen.scaleX = 0.32715486817515643;
-		guapen.scaleY = 0.32715486817515643;
+		// container_1
+		const container_1 = this.add.container(553.0120849609375, 361);
 
 		// progressBar
-		const progressBar = this.add.rectangle(553.0120849609375, 361, 256, 20);
+		const progressBar = this.add.rectangle(-354, -130, 256, 20);
 		progressBar.setOrigin(0, 0);
 		progressBar.isFilled = true;
 		progressBar.fillColor = 14737632;
+		container_1.add(progressBar);
 
 		// progressBarBg
-		const progressBarBg = this.add.rectangle(553.0120849609375, 361, 256, 20);
+		const progressBarBg = this.add.rectangle(-354, -130, 256, 20);
 		progressBarBg.setOrigin(0, 0);
 		progressBarBg.fillColor = 14737632;
 		progressBarBg.isStroked = true;
-
-		// loadingText
-		const loadingText = this.add.text(552.0120849609375, 329, "", {});
-		loadingText.text = "Loading...";
-		loadingText.setStyle({ "color": "#e0e0e0", "fontFamily": "arial", "fontSize": "20px" });
+		container_1.add(progressBarBg);
 
 		this.progressBar = progressBar;
 
@@ -49,41 +43,36 @@ export default class Preload extends Phaser.Scene {
 
 	/* START-USER-CODE */
 
-	// Write your code here
+  // Write your code here
 
-	preload() {
+  preload() {
+    this.editorCreate();
 
-		this.editorCreate();
+    this.load.pack("asset-pack", "assets/asset-pack.json");
 
-		this.load.pack("asset-pack", "assets/asset-pack.json");
+    const width = this.progressBar.width;
 
-		const width = this.progressBar.width;
+    this.load.on("progress", (value: number) => {
+      this.progressBar.width = width * value;
+    });
+  }
 
-		this.load.on("progress", (value: number) => {
+  create() {
+    if (process.env.NODE_ENV === "development") {
+      const start = new URLSearchParams(location.search).get("start");
 
-			this.progressBar.width = width * value;
-		});
-	}
+      if (start) {
+        console.log(`Development: jump to ${start}`);
+        this.scene.start(start);
 
-	create() {
+        return;
+      }
+    }
 
-		if (process.env.NODE_ENV === "development") {
+    this.scene.start("Title");
+  }
 
-			const start = new URLSearchParams(location.search).get("start");
-
-			if (start) {
-
-				console.log(`Development: jump to ${start}`);
-				this.scene.start(start);
-
-				return;
-			}
-		}
-
-		this.scene.start("Level");
-	}
-
-	/* END-USER-CODE */
+  /* END-USER-CODE */
 }
 
 /* END OF COMPILED CODE */
