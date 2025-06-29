@@ -20,6 +20,9 @@ import EnergyCrystal from "../prefabs/EnergyCrystal";
 import GoalHPSystem from "../systems/GoalHPSystem";
 import GoalHPBar from "../ui/GoalHPBar";
 import GameOverOverlay from "../ui/GameOverOverlay";
+import WaveStartOverlay from "../ui/WaveStartOverlay";
+import CongratulationsOverlay from "../ui/CongratulationsOverlay";
+import { TEST_WAVES, SAMPLE_WAVES } from "../config/waves";
 /* END-USER-IMPORTS */
 
 export default class Level extends Phaser.Scene {
@@ -153,7 +156,10 @@ export default class Level extends Phaser.Scene {
   private goalHPSystem!: GoalHPSystem;
   private goalHPBar!: GoalHPBar;
   private gameOverOverlay!: GameOverOverlay;
+  private waveStartOverlay!: WaveStartOverlay;
+  private congratulationsOverlay!: CongratulationsOverlay;
   private goal!: Goal;
+  private enemySpawner!: EnemySpawner;
   private isGameOver: boolean = false;
 
   // Display layers for proper rendering order (bottom to top):
@@ -242,9 +248,21 @@ export default class Level extends Phaser.Scene {
           pathLayer.tilemapLayer,
           this.buildingLayer
         );
-        console.log(
-          "EnemySpawner initialized and will start spawning enemies every 2 seconds"
-        );
+
+        // Store reference to spawner for updates
+        this.enemySpawner = spawnerObject;
+
+        // Create Wave Start overlay early so it's ready for wave events
+        if (!this.waveStartOverlay) {
+          this.waveStartOverlay = new WaveStartOverlay(this);
+          this.add.existing(this.waveStartOverlay);
+          this.uiLayer.add(this.waveStartOverlay);
+        }
+
+        // Load and start waves (you can change this to load different wave sets)
+        this.loadDefaultWaves();
+
+        console.log("EnemySpawner initialized with wave system");
       } else {
         console.warn("Path layer not found - enemy spawner cannot pathfind");
       }
@@ -267,7 +285,7 @@ export default class Level extends Phaser.Scene {
     // Initialize energy system
     this.energySystem = new EnergySystem(this, {
       maxEnergy: 100,
-      regenerationRate: 10, // 1 energy every 5 frames
+      regenerationRate: 20, // 1 energy every x frames
       initialEnergy: 100,
     });
 
@@ -310,6 +328,11 @@ export default class Level extends Phaser.Scene {
     this.gameOverOverlay = new GameOverOverlay(this, this.inputManager);
     this.add.existing(this.gameOverOverlay);
     this.uiLayer.add(this.gameOverOverlay);
+
+    // Create Congratulations overlay
+    this.congratulationsOverlay = new CongratulationsOverlay(this);
+    this.add.existing(this.congratulationsOverlay);
+    this.uiLayer.add(this.congratulationsOverlay);
 
     // Subscribe to game over events
     this.goalHPSystem.onGameOver(this.handleGameOver.bind(this));
@@ -475,6 +498,11 @@ export default class Level extends Phaser.Scene {
     // Update goal (for attack detection)
     if (this.goal) {
       this.goal.update();
+    }
+
+    // Update enemy spawner (for wave system)
+    if (this.enemySpawner) {
+      this.enemySpawner.update();
     }
 
     if (this.player) {
@@ -809,6 +837,128 @@ export default class Level extends Phaser.Scene {
    */
   public getGoalHPSystem(): GoalHPSystem | null {
     return this.goalHPSystem || null;
+  }
+
+  /**
+   * Load default wave configuration and start wave system
+   */
+  private loadDefaultWaves(): void {
+    if (!this.enemySpawner) {
+      console.warn("Enemy spawner not initialized - cannot load waves");
+      return;
+    }
+
+    // Load test waves for development (change to SAMPLE_WAVES for full game)
+    this.enemySpawner.loadWaves(TEST_WAVES);
+
+    // Subscribe to wave start events to show overlay BEFORE starting waves
+    const waveSystem = this.enemySpawner.getWaveSystem();
+    if (waveSystem && this.waveStartOverlay) {
+      waveSystem.onWaveStart((waveIndex: number, waveName?: string) => {
+        console.log(
+          `Wave start event received: Wave ${waveIndex}${
+            waveName ? ` (${waveName})` : ""
+          }`
+        );
+        this.waveStartOverlay.showWave(waveIndex, waveName);
+      });
+
+      // Subscribe to all waves complete event to show congratulations
+      waveSystem.onAllWavesComplete(() => {
+        console.log(
+          "All waves complete event received - showing congratulations"
+        );
+        this.congratulationsOverlay.show();
+      });
+    }
+
+    // Start the waves (this will trigger the first wave start event)
+    this.enemySpawner.startWaves();
+
+    console.log("Default waves loaded and started");
+  }
+
+  /**
+   * Load and start specific wave configuration
+   * Call from console: game.scene.getScene('Level').loadWaves('test'|'sample')
+   */
+  public loadWaves(waveSet: "test" | "sample" = "test"): void {
+    if (!this.enemySpawner) {
+      console.warn("Enemy spawner not initialized - cannot load waves");
+      return;
+    }
+
+    const waves = waveSet === "sample" ? SAMPLE_WAVES : TEST_WAVES;
+    this.enemySpawner.stopWaves();
+    this.enemySpawner.loadWaves(waves);
+
+    // Subscribe to wave start events to show overlay BEFORE starting waves
+    const waveSystem = this.enemySpawner.getWaveSystem();
+    if (waveSystem && this.waveStartOverlay) {
+      waveSystem.onWaveStart((waveIndex: number, waveName?: string) => {
+        console.log(
+          `Wave start event received: Wave ${waveIndex}${
+            waveName ? ` (${waveName})` : ""
+          }`
+        );
+        this.waveStartOverlay.showWave(waveIndex, waveName);
+      });
+
+      // Subscribe to all waves complete event to show congratulations
+      waveSystem.onAllWavesComplete(() => {
+        console.log(
+          "All waves complete event received - showing congratulations"
+        );
+        this.congratulationsOverlay.show();
+      });
+    }
+
+    this.enemySpawner.startWaves();
+
+    console.log(`${waveSet} waves loaded and started`);
+  }
+
+  /**
+   * Test the wave start overlay
+   * Call from console: game.scene.getScene('Level').testWaveOverlay(waveNumber, waveName)
+   */
+  public testWaveOverlay(waveNumber: number = 1, waveName?: string): void {
+    if (this.waveStartOverlay) {
+      this.waveStartOverlay.showWave(waveNumber, waveName);
+      console.log(
+        `Showing test wave overlay: Wave ${waveNumber}${
+          waveName ? ` (${waveName})` : ""
+        }`
+      );
+    } else {
+      console.log("Wave start overlay not initialized");
+    }
+  }
+
+  /**
+   * Configure wave start delay
+   * Call from console: game.scene.getScene('Level').setWaveStartDelay(3000)
+   */
+  public setWaveStartDelay(delay: number): void {
+    if (this.enemySpawner) {
+      this.enemySpawner.setWaveStartDelay(delay);
+      console.log(`Wave start delay set to ${delay}ms`);
+    } else {
+      console.log("Enemy spawner not initialized");
+    }
+  }
+
+  /**
+   * Test the congratulations overlay
+   * Call from console: game.scene.getScene('Level').testCongratulations()
+   */
+  public testCongratulations(): void {
+    if (this.congratulationsOverlay) {
+      this.congratulationsOverlay.show();
+      console.log("Showing test congratulations overlay");
+    } else {
+      console.log("Congratulations overlay not initialized");
+    }
   }
 
   /**
@@ -1206,9 +1356,9 @@ export default class Level extends Phaser.Scene {
 
   /**
    * Debug method to manually spawn an enemy from the spawner
-   * Call from console: game.scene.getScene('Level').testSpawnEnemy()
+   * Call from console: game.scene.getScene('Level').testSpawnEnemy(enemyType)
    */
-  public testSpawnEnemy(): void {
+  public testSpawnEnemy(enemyType: string = "BASIC"): void {
     const spawner = this.children
       .getAll()
       .find((child) => child instanceof EnemySpawner) as
@@ -1216,9 +1366,12 @@ export default class Level extends Phaser.Scene {
       | undefined;
 
     if (spawner) {
-      const enemy = spawner.spawn();
+      const enemy = spawner.spawnSpecificType(enemyType);
       if (enemy) {
-        console.log("Manually spawned enemy:", enemy);
+        console.log(
+          `Manually spawned ${enemy.getEnemyConfig().name} enemy:`,
+          enemy
+        );
         console.log(`Enemy spawned at: (${enemy.x}, ${enemy.y})`);
         console.log(
           `Enemy target: (${enemy.getTarget().x}, ${enemy.getTarget().y})`
@@ -1233,7 +1386,7 @@ export default class Level extends Phaser.Scene {
   }
 
   /**
-   * Debug method to control enemy spawner
+   * Debug method to control enemy spawner wave system
    * Call from console: game.scene.getScene('Level').controlSpawner('start'|'stop'|'status')
    */
   public controlSpawner(action: "start" | "stop" | "status"): void {
@@ -1250,17 +1403,20 @@ export default class Level extends Phaser.Scene {
 
     switch (action) {
       case "start":
-        spawner.startSpawning();
-        console.log("Enemy spawner started");
+        spawner.startWaves();
+        console.log("Enemy wave spawning started");
         break;
       case "stop":
-        spawner.stopSpawning();
-        console.log("Enemy spawner stopped");
+        spawner.stopWaves();
+        console.log("Enemy wave spawning stopped");
         break;
       case "status":
         console.log(`Spawner active: ${spawner.isSpawning()}`);
-        console.log(`Spawn interval: ${spawner.getSpawnInterval()}ms`);
         console.log(`Goal buffer: ${spawner.getGoalBuffer()}px`);
+        const waveSystem = spawner.getWaveSystem();
+        if (waveSystem) {
+          console.log(`Wave system: ${waveSystem.getDebugInfo()}`);
+        }
         break;
       default:
         console.log("Invalid action. Use 'start', 'stop', or 'status'");
@@ -1369,9 +1525,12 @@ export default class Level extends Phaser.Scene {
 
   /**
    * Debug method to spawn enemies quickly for testing
-   * Call from console: game.scene.getScene('Level').spawnTestEnemies(count)
+   * Call from console: game.scene.getScene('Level').spawnTestEnemies(count, enemyType)
    */
-  public spawnTestEnemies(count: number = 5): void {
+  public spawnTestEnemies(
+    count: number = 5,
+    enemyType: string = "BASIC"
+  ): void {
     const spawner = this.children
       .getAll()
       .find((child) => child instanceof EnemySpawner) as
@@ -1383,11 +1542,15 @@ export default class Level extends Phaser.Scene {
       return;
     }
 
-    console.log(`Spawning ${count} test enemies...`);
+    console.log(`Spawning ${count} ${enemyType} test enemies...`);
     for (let i = 0; i < count; i++) {
-      const enemy = spawner.spawn();
+      const enemy = spawner.spawnSpecificType(enemyType);
       if (enemy) {
-        console.log(`Spawned enemy ${i + 1} at (${enemy.x}, ${enemy.y})`);
+        console.log(
+          `Spawned ${enemy.getEnemyConfig().name} enemy ${i + 1} at (${
+            enemy.x
+          }, ${enemy.y})`
+        );
       } else {
         console.log(`Failed to spawn enemy ${i + 1}`);
       }

@@ -3,8 +3,9 @@
 /* START OF COMPILED CODE */
 
 /* START-USER-IMPORTS */
-import Enemy from "./Enemy";
+import Enemy, { ENEMY_TYPES } from "./Enemy";
 import Goal from "./Goal";
+import WaveSystem, { Wave } from "../systems/WaveSystem";
 /* END-USER-IMPORTS */
 
 export default class EnemySpawner extends Phaser.GameObjects.Rectangle {
@@ -29,13 +30,11 @@ export default class EnemySpawner extends Phaser.GameObjects.Rectangle {
 
   /* START-USER-CODE */
 
-  private spawnTimer?: Phaser.Time.TimerEvent;
   private goal?: Goal;
   private pathLayer?: Phaser.Tilemaps.TilemapLayer;
   private buildingLayer?: Phaser.GameObjects.Group;
   private goalBuffer: number = 5; // Distance to stop before the goal (in pixels)
-  private spawnInterval: number = 2500; // 2 seconds in milliseconds
-  private isPaused: boolean = false; // Track if spawning is paused (e.g., during rewind)
+  private waveSystem?: WaveSystem;
 
   /**
    * Initialize the spawner with references to the goal, path layer, and building layer
@@ -50,45 +49,61 @@ export default class EnemySpawner extends Phaser.GameObjects.Rectangle {
     this.pathLayer = pathLayer;
     this.buildingLayer = buildingLayer;
 
-    // Start automatic spawning
-    this.startSpawning();
-  }
-
-  /**
-   * Start automatic enemy spawning every 2 seconds
-   */
-  public startSpawning(): void {
-    if (this.spawnTimer) {
-      this.spawnTimer.destroy();
-    }
-
-    this.spawnTimer = this.scene.time.addEvent({
-      delay: this.spawnInterval,
-      callback: this.spawn,
-      callbackScope: this,
-      loop: true,
+    // Initialize wave system
+    this.waveSystem = new WaveSystem(this.scene);
+    this.waveSystem.setSpawnFunction((enemyType: string) => {
+      this.spawnSpecificType(enemyType);
     });
 
-    console.log("Enemy spawner started - spawning every 2 seconds");
+    // Set function to get living enemy count
+    this.waveSystem.setLivingEnemyCountFunction(() => {
+      return this.getLivingEnemyCount();
+    });
+
+    console.log("EnemySpawner initialized with WaveSystem");
   }
 
   /**
-   * Stop automatic enemy spawning
+   * Load wave configurations and start wave system
    */
-  public stopSpawning(): void {
-    if (this.spawnTimer) {
-      this.spawnTimer.destroy();
-      this.spawnTimer = undefined;
+  public loadWaves(waves: Wave[]): void {
+    if (!this.waveSystem) {
+      console.warn("WaveSystem not initialized - call initialize() first");
+      return;
     }
-    console.log("Enemy spawner stopped");
+    this.waveSystem.loadWaves(waves);
+    console.log(`Loaded ${waves.length} waves into spawner`);
+  }
+
+  /**
+   * Start wave-based spawning
+   */
+  public startWaves(): void {
+    if (!this.waveSystem) {
+      console.warn("WaveSystem not initialized - call initialize() first");
+      return;
+    }
+    this.waveSystem.startWaves();
+    console.log("Wave spawning started");
+  }
+
+  /**
+   * Stop wave-based spawning
+   */
+  public stopWaves(): void {
+    if (this.waveSystem) {
+      this.waveSystem.stopWaves();
+    }
+    console.log("Wave spawning stopped");
   }
 
   /**
    * Pause spawning (e.g., during rewind mode)
-   * The timer continues running but spawn() will return early
    */
   public pauseSpawning(): void {
-    this.isPaused = true;
+    if (this.waveSystem) {
+      this.waveSystem.pauseWaves();
+    }
     console.log("Enemy spawner paused");
   }
 
@@ -96,26 +111,53 @@ export default class EnemySpawner extends Phaser.GameObjects.Rectangle {
    * Resume spawning after being paused
    */
   public resumeSpawning(): void {
-    this.isPaused = false;
+    if (this.waveSystem) {
+      this.waveSystem.resumeWaves();
+    }
     console.log("Enemy spawner resumed");
   }
 
   /**
-   * Spawn a single enemy at a random position within the spawner bounds
-   * The enemy will be set to pathfind towards the goal
+   * Update the wave system - should be called every frame
    */
-  public spawn(): Enemy | null {
-    // Don't spawn if paused (e.g., during rewind mode)
-    if (this.isPaused) {
-      console.debug("EnemySpawner is paused - skipping spawn");
-      return null;
+  public update(): void {
+    if (this.waveSystem) {
+      this.waveSystem.update();
     }
+  }
 
+  /**
+   * Get the count of living enemies in the scene
+   */
+  private getLivingEnemyCount(): number {
+    if (!this.buildingLayer) return 0;
+
+    let count = 0;
+    this.buildingLayer.children.entries.forEach((child) => {
+      if (child instanceof Enemy && !child.isDead_() && child.visible) {
+        count++;
+      }
+    });
+
+    return count;
+  }
+
+  /**
+   * Spawn a specific enemy type at a random position within the spawner bounds
+   * @param enemyType The type of enemy to spawn (e.g., "BASIC", "FAST", "TANK")
+   */
+  public spawnSpecificType(enemyType: string): Enemy | null {
     if (!this.goal || !this.pathLayer || !this.buildingLayer) {
       console.warn(
         "EnemySpawner not properly initialized - missing goal, pathLayer, or buildingLayer"
       );
       return null;
+    }
+
+    // Validate enemy type
+    if (!ENEMY_TYPES[enemyType]) {
+      console.warn(`Invalid enemy type: ${enemyType}. Using BASIC instead.`);
+      enemyType = "BASIC";
     }
 
     // Calculate the actual bounds of the spawner (accounting for scale)
@@ -126,8 +168,15 @@ export default class EnemySpawner extends Phaser.GameObjects.Rectangle {
     const randomX = this.x + (Math.random() - 0.5) * actualWidth;
     const randomY = this.y + (Math.random() - 0.5) * actualHeight;
 
-    // Create new enemy
-    const enemy = new Enemy(this.scene, randomX, randomY);
+    // Create new enemy with the specified type
+    const enemy = new Enemy(
+      this.scene,
+      randomX,
+      randomY,
+      "octonid",
+      0,
+      enemyType
+    );
 
     // Add enemy to the scene and building layer
     this.scene.add.existing(enemy);
@@ -159,26 +208,34 @@ export default class EnemySpawner extends Phaser.GameObjects.Rectangle {
 
     // Set enemy to pathfind towards the buffered goal position
     enemy.setTargetWithPath(targetX, targetY, this.pathLayer);
+    enemy.setX(enemy.x - 20);
 
     console.debug(
-      `Spawned enemy at (${Math.round(randomX)}, ${Math.round(
-        randomY
-      )}) targeting (${Math.round(targetX)}, ${Math.round(targetY)})`
+      `Spawned ${enemy.getEnemyConfig().name} enemy at (${Math.round(
+        randomX
+      )}, ${Math.round(randomY)}) targeting (${Math.round(
+        targetX
+      )}, ${Math.round(targetY)})`
     );
 
     return enemy;
   }
 
   /**
-   * Set the spawn interval (in milliseconds)
+   * Get available enemy types and their configurations
    */
-  public setSpawnInterval(interval: number): void {
-    this.spawnInterval = interval;
-
-    // Restart spawning with new interval if currently active
-    if (this.spawnTimer) {
-      this.startSpawning();
-    }
+  public getAvailableEnemyTypes(): Record<string, any> {
+    return Object.fromEntries(
+      Object.entries(ENEMY_TYPES).map(([key, config]) => [
+        key,
+        {
+          name: config.name,
+          speed: config.speed,
+          maxHp: config.maxHp,
+          colorHex: `0x${config.tintColor.toString(16).padStart(6, "0")}`,
+        },
+      ])
+    );
   }
 
   /**
@@ -189,13 +246,6 @@ export default class EnemySpawner extends Phaser.GameObjects.Rectangle {
   }
 
   /**
-   * Get the current spawn interval
-   */
-  public getSpawnInterval(): number {
-    return this.spawnInterval;
-  }
-
-  /**
    * Get the current goal buffer
    */
   public getGoalBuffer(): number {
@@ -203,17 +253,39 @@ export default class EnemySpawner extends Phaser.GameObjects.Rectangle {
   }
 
   /**
-   * Check if spawning is currently active
+   * Check if wave spawning is currently active
    */
   public isSpawning(): boolean {
-    return this.spawnTimer !== undefined;
+    return this.waveSystem
+      ? this.waveSystem.getCurrentWaveInfo().isActive
+      : false;
+  }
+
+  /**
+   * Get wave system for direct access (for debugging/advanced usage)
+   */
+  public getWaveSystem(): WaveSystem | undefined {
+    return this.waveSystem;
+  }
+
+  /**
+   * Set the wave start delay (time to wait after wave start event before spawning begins)
+   * @param delay Delay in milliseconds
+   */
+  public setWaveStartDelay(delay: number): void {
+    if (this.waveSystem) {
+      this.waveSystem.setWaveStartDelay(delay);
+    }
   }
 
   /**
    * Clean up when the spawner is destroyed
    */
   public destroy(fromScene?: boolean): void {
-    this.stopSpawning();
+    this.stopWaves();
+    if (this.waveSystem) {
+      this.waveSystem.destroy();
+    }
     super.destroy(fromScene);
   }
 

@@ -14,6 +14,35 @@ import EnergyCrystal from "./EnergyCrystal";
 import { DEBUG } from "../main";
 /* END-USER-IMPORTS */
 
+// Enemy type definitions
+export interface EnemyTypeConfig {
+  name: string;
+  speed: number;
+  maxHp: number;
+  tintColor: number;
+}
+
+export const ENEMY_TYPES: Record<string, EnemyTypeConfig> = {
+  BASIC: {
+    name: "Basic",
+    speed: 100,
+    maxHp: 3,
+    tintColor: 0xffffff, // No tint (white/original color)
+  },
+  FAST: {
+    name: "Fast",
+    speed: 150,
+    maxHp: 2,
+    tintColor: 0x66ff66, // Green tint
+  },
+  TANK: {
+    name: "Tank",
+    speed: 70,
+    maxHp: 5,
+    tintColor: 0xff6666, // Red tint
+  },
+};
+
 // Enemy states
 export enum EnemyState {
   IDLE = "IDLE",
@@ -43,18 +72,25 @@ export default class Enemy extends RewindableSprite {
     x?: number,
     y?: number,
     texture?: string,
-    frame?: number | string
+    frame?: number | string,
+    enemyType?: string
   ) {
     super(scene, x ?? 0, y ?? 0, texture || "octonid", frame ?? 0);
 
     this.play(ANIM_ENEMY_WALK_DOWN);
 
     /* START-USER-CTR-CODE */
-
+    // Initialize enemy type
+    this.initializeEnemyType(enemyType || "BASIC");
     /* END-USER-CTR-CODE */
   }
 
   /* START-USER-CODE */
+
+  // Enemy type properties
+  private enemyType: string = "BASIC";
+  private enemyConfig: EnemyTypeConfig = ENEMY_TYPES.BASIC;
+  private baseTintColor: number = 0xffffff; // Store the base tint color
 
   // Movement properties
   private targetX: number = 0;
@@ -91,6 +127,43 @@ export default class Enemy extends RewindableSprite {
   private flashTween: Phaser.Tweens.Tween | null = null;
 
   /**
+   * Initialize enemy type and apply its characteristics
+   */
+  private initializeEnemyType(type: string): void {
+    this.enemyType = type;
+    this.enemyConfig = ENEMY_TYPES[type] || ENEMY_TYPES.BASIC;
+
+    // Apply type characteristics
+    this.speed = this.enemyConfig.speed;
+    this.maxHp = this.enemyConfig.maxHp;
+    this.hp = this.maxHp;
+    this.baseTintColor = this.enemyConfig.tintColor;
+
+    // Apply visual tint
+    this.setTint(this.baseTintColor);
+
+    console.debug(
+      `Enemy initialized as ${this.enemyConfig.name} type: Speed=${
+        this.speed
+      }, HP=${this.maxHp}, Color=0x${this.baseTintColor.toString(16)}`
+    );
+  }
+
+  /**
+   * Get the enemy type
+   */
+  public getEnemyType(): string {
+    return this.enemyType;
+  }
+
+  /**
+   * Get the enemy type configuration
+   */
+  public getEnemyConfig(): EnemyTypeConfig {
+    return this.enemyConfig;
+  }
+
+  /**
    * Override getCustomStateData to include enemy-specific state
    */
   protected getCustomStateData(): Record<string, any> {
@@ -99,6 +172,8 @@ export default class Enemy extends RewindableSprite {
       currentState: this.currentState,
       hp: this.hp,
       maxHp: this.maxHp,
+      enemyType: this.enemyType,
+      baseTintColor: this.baseTintColor,
     };
   }
 
@@ -120,6 +195,15 @@ export default class Enemy extends RewindableSprite {
 
     if (customData.maxHp !== undefined) {
       this.maxHp = customData.maxHp;
+    }
+
+    if (customData.enemyType !== undefined) {
+      this.enemyType = customData.enemyType;
+      this.enemyConfig = ENEMY_TYPES[this.enemyType] || ENEMY_TYPES.BASIC;
+    }
+
+    if (customData.baseTintColor !== undefined) {
+      this.baseTintColor = customData.baseTintColor;
     }
 
     // Update visibility and behavior based on restored dead state
@@ -260,7 +344,7 @@ export default class Enemy extends RewindableSprite {
     // Set enemy to bright red immediately
     this.setTint(0xff6666);
 
-    // Create counter tween to fade back to normal over 500ms
+    // Create counter tween to fade back to base color over 600ms
     this.flashTween = this.scene.tweens.addCounter({
       from: 0,
       to: 1,
@@ -270,18 +354,23 @@ export default class Enemy extends RewindableSprite {
         // Get the current progress value (0 to 1)
         const progress = tween.getValue() || 0;
 
-        // Interpolate from bright red towards white (no tint)
-        // Start with red tint (0xff6666) and fade to white (0xffffff)
-        const red = 255; // Keep red channel at maximum
-        const green = Math.floor(0x66 + (255 - 0x66) * progress);
-        const blue = Math.floor(0x66 + (255 - 0x66) * progress);
+        // Interpolate from bright red towards base tint color
+        // Extract RGB components from base tint color
+        const baseRed = (this.baseTintColor >> 16) & 0xff;
+        const baseGreen = (this.baseTintColor >> 8) & 0xff;
+        const baseBlue = this.baseTintColor & 0xff;
+
+        // Interpolate from red (0xff6666) to base color
+        const red = Math.floor(0xff + (baseRed - 0xff) * progress);
+        const green = Math.floor(0x66 + (baseGreen - 0x66) * progress);
+        const blue = Math.floor(0x66 + (baseBlue - 0x66) * progress);
 
         const color = (red << 16) | (green << 8) | blue;
         this.setTint(color);
       },
       onComplete: () => {
-        // Clear tint completely when done
-        this.clearTint();
+        // Restore base tint color when done
+        this.setTint(this.baseTintColor);
         this.flashTween = null;
       },
     });
@@ -348,6 +437,8 @@ export default class Enemy extends RewindableSprite {
     } else {
       // Make enemy visible and resume behavior
       this.setVisible(true);
+      // Restore base tint color
+      this.setTint(this.baseTintColor);
       // Resume appropriate animation if needed
       this.ensureAnimationIsPlaying();
     }
@@ -1074,12 +1165,6 @@ export default class Enemy extends RewindableSprite {
           targetTile.y
         );
         this.setTarget(randomCoords.x, randomCoords.y);
-        console.debug(
-          `Moving to path tile ${this.currentPathIndex}:`,
-          targetTile,
-          "at coords",
-          randomCoords
-        );
       }
     }
 
