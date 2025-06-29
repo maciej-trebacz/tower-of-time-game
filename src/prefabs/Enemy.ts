@@ -1,0 +1,1175 @@
+// You can write more code here
+
+/* START OF COMPILED CODE */
+
+/* START-USER-IMPORTS */
+import {
+  ANIM_ENEMY_WALK_DOWN,
+  ANIM_ENEMY_WALK_LEFT,
+  ANIM_ENEMY_WALK_RIGHT,
+  ANIM_ENEMY_WALK_UP,
+} from "../animations";
+import RewindableSprite, { TimeMode } from "../components/RewindableSprite";
+import EnergyCrystal from "./EnergyCrystal";
+import { DEBUG } from "../main";
+/* END-USER-IMPORTS */
+
+// Enemy states
+export enum EnemyState {
+  IDLE = "IDLE",
+  WALKING = "WALKING",
+  ATTACKING = "ATTACKING",
+  DEAD = "DEAD",
+}
+
+// Pathfinding interfaces
+interface PathNode {
+  x: number;
+  y: number;
+  g: number; // Cost from start
+  h: number; // Heuristic cost to end
+  f: number; // Total cost (g + h)
+  parent: PathNode | null;
+}
+
+interface Point {
+  x: number;
+  y: number;
+}
+
+export default class Enemy extends RewindableSprite {
+  constructor(
+    scene: Phaser.Scene,
+    x?: number,
+    y?: number,
+    texture?: string,
+    frame?: number | string
+  ) {
+    super(scene, x ?? 0, y ?? 0, texture || "octonid", frame ?? 0);
+
+    this.play(ANIM_ENEMY_WALK_DOWN);
+
+    /* START-USER-CTR-CODE */
+
+    /* END-USER-CTR-CODE */
+  }
+
+  /* START-USER-CODE */
+
+  // Movement properties
+  private targetX: number = 0;
+  private targetY: number = 0;
+  private speed: number = 100;
+  private movementThreshold: number = 3;
+  private lastDirection: { x: number; y: number } = { x: 0, y: 1 };
+  private storedTargetX: number = 0; // Store target when entering rewind
+  private storedTargetY: number = 0;
+
+  // Pathfinding properties
+  private currentState: EnemyState = EnemyState.IDLE;
+  private pathDestination: Point | null = null;
+  private currentPath: Point[] = [];
+  private pathLayer: Phaser.Tilemaps.TilemapLayer | null = null;
+  private currentPathIndex: number = 0;
+
+  // Debug visualization
+  private pathGraphics: Phaser.GameObjects.Graphics | null = null;
+
+  // Dead state properties
+  public isDead: boolean = false;
+
+  // Health system
+  private maxHp: number = 3; // Default health points
+  private hp: number = this.maxHp;
+
+  // Attack system
+  private attackTarget: Phaser.GameObjects.Sprite | null = null;
+  private attackTimer?: Phaser.Time.TimerEvent;
+  private readonly ATTACK_RANGE = 30; // Distance to start attacking
+
+  // Visual effects
+  private flashTween: Phaser.Tweens.Tween | null = null;
+
+  /**
+   * Override getCustomStateData to include enemy-specific state
+   */
+  protected getCustomStateData(): Record<string, any> {
+    return {
+      isDead: this.isDead,
+      currentState: this.currentState,
+      hp: this.hp,
+      maxHp: this.maxHp,
+    };
+  }
+
+  /**
+   * Override applyCustomStateData to restore enemy-specific state
+   */
+  protected applyCustomStateData(customData: Record<string, any>): void {
+    if (customData.isDead !== undefined) {
+      this.isDead = customData.isDead;
+    }
+
+    if (customData.currentState !== undefined) {
+      this.currentState = customData.currentState;
+    }
+
+    if (customData.hp !== undefined) {
+      this.hp = customData.hp;
+    }
+
+    if (customData.maxHp !== undefined) {
+      this.maxHp = customData.maxHp;
+    }
+
+    // Update visibility and behavior based on restored dead state
+    this.updateVisibilityBasedOnDeadState();
+  }
+
+  /**
+   * Set the target position for the enemy to move towards
+   * @param x Target X coordinate
+   * @param y Target Y coordinate
+   */
+  public setTarget(x: number, y: number): void {
+    this.targetX = x;
+    this.targetY = y;
+
+    // Clear path visualization when using direct movement (not pathfinding)
+    if (this.currentState !== EnemyState.WALKING) {
+      this.clearPathVisualization();
+    }
+  }
+
+  /**
+   * Get the current target position
+   */
+  public getTarget(): { x: number; y: number } {
+    return { x: this.targetX, y: this.targetY };
+  }
+
+  /**
+   * Check if the enemy has reached its target
+   */
+  public hasReachedTarget(): boolean {
+    const distance = Phaser.Math.Distance.Between(
+      this.x,
+      this.y,
+      this.targetX,
+      this.targetY
+    );
+    return distance <= this.movementThreshold;
+  }
+
+  /**
+   * Set the movement speed
+   * @param speed Speed in pixels per second
+   */
+  public setSpeed(speed: number): void {
+    this.speed = speed;
+  }
+
+  /**
+   * Override update to remove separate dead state tracking
+   * The parent class now handles all state recording including custom data
+   */
+  public update(time: number, delta: number): void {
+    // Call parent update which handles state recording automatically
+    super.update(time, delta);
+  }
+
+  /**
+   * Take damage and check if enemy should die
+   * @param damage Amount of damage to take (default 1)
+   */
+  public takeDamage(damage: number = 1): void {
+    if (this.isDead) return; // Can't damage dead enemies
+
+    this.hp = Math.max(0, this.hp - damage);
+    console.debug(`Enemy took ${damage} damage, HP: ${this.hp}/${this.maxHp}`);
+
+    // Trigger damage flash effect
+    this.flashDamage();
+
+    // Check if enemy should die
+    if (this.hp <= 0) {
+      this.markAsDead();
+    }
+  }
+
+  /**
+   * Get current HP
+   */
+  public getHp(): number {
+    return this.hp;
+  }
+
+  /**
+   * Get maximum HP
+   */
+  public getMaxHp(): number {
+    return this.maxHp;
+  }
+
+  /**
+   * Set maximum HP and optionally reset current HP
+   * @param maxHp New maximum HP
+   * @param resetCurrent Whether to reset current HP to max (default true)
+   */
+  public setMaxHp(maxHp: number, resetCurrent: boolean = true): void {
+    this.maxHp = maxHp;
+    if (resetCurrent) {
+      this.hp = this.maxHp;
+    } else {
+      // Ensure current HP doesn't exceed new max
+      this.hp = Math.min(this.hp, this.maxHp);
+    }
+  }
+
+  /**
+   * Heal the enemy
+   * @param amount Amount to heal (default 1)
+   */
+  public heal(amount: number = 1): void {
+    if (this.isDead) return; // Can't heal dead enemies
+
+    this.hp = Math.min(this.maxHp, this.hp + amount);
+    console.debug(`Enemy healed ${amount} HP, HP: ${this.hp}/${this.maxHp}`);
+  }
+
+  /**
+   * Check if enemy is at full health
+   */
+  public isAtFullHealth(): boolean {
+    return this.hp >= this.maxHp;
+  }
+
+  /**
+   * Flash enemy red when taking damage
+   */
+  private flashDamage(): void {
+    // Skip flash if enemy is dead or invisible
+    if (this.isDead || !this.visible) return;
+
+    // Stop any existing flash tween
+    if (this.flashTween) {
+      this.flashTween.stop();
+      this.flashTween = null;
+    }
+
+    // Set enemy to bright red immediately
+    this.setTint(0xff6666);
+
+    // Create counter tween to fade back to normal over 500ms
+    this.flashTween = this.scene.tweens.addCounter({
+      from: 0,
+      to: 1,
+      duration: 600,
+      ease: "Linear",
+      onUpdate: (tween: Phaser.Tweens.Tween) => {
+        // Get the current progress value (0 to 1)
+        const progress = tween.getValue() || 0;
+
+        // Interpolate from bright red towards white (no tint)
+        // Start with red tint (0xff6666) and fade to white (0xffffff)
+        const red = 255; // Keep red channel at maximum
+        const green = Math.floor(0x66 + (255 - 0x66) * progress);
+        const blue = Math.floor(0x66 + (255 - 0x66) * progress);
+
+        const color = (red << 16) | (green << 8) | blue;
+        this.setTint(color);
+      },
+      onComplete: () => {
+        // Clear tint completely when done
+        this.clearTint();
+        this.flashTween = null;
+      },
+    });
+  }
+
+  /**
+   * Mark enemy as dead (now only called when HP reaches 0)
+   */
+  public markAsDead(): void {
+    if (!this.isDead) {
+      this.isDead = true;
+      this.currentState = EnemyState.DEAD;
+      this.updateVisibilityBasedOnDeadState();
+      this.stopMovement();
+
+      // Stop attacking if currently attacking
+      this.stopAttacking();
+
+      // Spawn energy crystal at enemy's position
+      this.spawnEnergyCrystal();
+
+      console.debug("Enemy marked as dead");
+    }
+  }
+
+  /**
+   * Spawn an energy crystal at the enemy's death location
+   */
+  private spawnEnergyCrystal(): void {
+    // Create energy crystal at enemy's position
+    const energyCrystal = new EnergyCrystal(this.scene, this.x, this.y);
+
+    // Add to scene and set appropriate depth
+    this.scene.add.existing(energyCrystal);
+    energyCrystal.setDepth(150); // Above buildings but below UI
+
+    console.debug(`Energy crystal spawned at (${this.x}, ${this.y})`);
+  }
+
+  /**
+   * Check if enemy is dead
+   */
+  public isDead_(): boolean {
+    return this.isDead;
+  }
+
+  /**
+   * Update visibility and behavior based on dead state
+   */
+  private updateVisibilityBasedOnDeadState(): void {
+    if (this.isDead) {
+      // Stop any flash effects and clear tint
+      if (this.flashTween) {
+        this.flashTween.stop();
+        this.flashTween = null;
+      }
+      this.clearTint();
+
+      // Make enemy invisible and stop animations
+      this.setVisible(false);
+      this.anims.stop();
+      // Stop movement immediately
+      this.stopMovement();
+    } else {
+      // Make enemy visible and resume behavior
+      this.setVisible(true);
+      // Resume appropriate animation if needed
+      this.ensureAnimationIsPlaying();
+    }
+  }
+
+  /**
+   * Check if enemy can be targeted (not dead)
+   */
+  public canBeTargeted(): boolean {
+    return !this.isDead && this.visible;
+  }
+
+  /**
+   * Ensure the enemy has a proper walking animation playing
+   */
+  private ensureAnimationIsPlaying(): void {
+    // If no animation is playing or current animation is not a walk animation, start one
+    if (
+      !this.anims.isPlaying ||
+      !this.isWalkAnimation(this.anims.currentAnim?.key)
+    ) {
+      // Use the last direction to determine which animation to play
+      const absX = Math.abs(this.lastDirection.x);
+      const absY = Math.abs(this.lastDirection.y);
+
+      let animationKey: string;
+      if (absX > absY) {
+        animationKey =
+          this.lastDirection.x > 0
+            ? ANIM_ENEMY_WALK_RIGHT
+            : ANIM_ENEMY_WALK_LEFT;
+      } else {
+        animationKey =
+          this.lastDirection.y > 0 ? ANIM_ENEMY_WALK_DOWN : ANIM_ENEMY_WALK_UP;
+      }
+
+      this.play(animationKey);
+    } else {
+      // Animation exists but might be paused, resume it
+      this.anims.resume();
+    }
+  }
+
+  /**
+   * Check if the given animation key is a walk animation
+   */
+  private isWalkAnimation(key: string | undefined): boolean {
+    if (!key) return false;
+    return [
+      ANIM_ENEMY_WALK_DOWN,
+      ANIM_ENEMY_WALK_LEFT,
+      ANIM_ENEMY_WALK_RIGHT,
+      ANIM_ENEMY_WALK_UP,
+    ].includes(key);
+  }
+
+  /**
+   * Override updateForward to skip logic when dead
+   */
+  protected updateForward(time: number, delta: number): void {
+    // Skip all movement and pathfinding logic if dead
+    if (this.isDead) {
+      return;
+    }
+
+    // Handle pathfinding logic first
+    this.updatePathfinding();
+
+    // Handle attacking logic
+    this.updateAttacking();
+
+    // Don't move if we've reached the target
+    if (this.hasReachedTarget()) {
+      return;
+    }
+
+    // Calculate movement vector
+    const deltaX = this.targetX - this.x;
+    const deltaY = this.targetY - this.y;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+    if (distance > this.movementThreshold) {
+      // Normalize the direction vector
+      const directionX = deltaX / distance;
+      const directionY = deltaY / distance;
+
+      // Calculate movement for this frame
+      const moveDistance = (this.speed * delta) / 1000; // delta is in milliseconds
+      const moveX = directionX * moveDistance;
+      const moveY = directionY * moveDistance;
+
+      // Move the enemy
+      this.x += moveX;
+      this.y += moveY;
+
+      // Update animation based on movement direction
+      this.updateAnimation(directionX, directionY);
+
+      // Store the last direction for consistency
+      this.lastDirection = { x: directionX, y: directionY };
+    }
+  }
+
+  /**
+   * Update the animation based on movement direction
+   * @param directionX Normalized X direction (-1 to 1)
+   * @param directionY Normalized Y direction (-1 to 1)
+   */
+  private updateAnimation(directionX: number, directionY: number): void {
+    // Determine which direction is dominant
+    const absX = Math.abs(directionX);
+    const absY = Math.abs(directionY);
+
+    let newAnimation: string;
+
+    if (absX > absY) {
+      // Moving more horizontally
+      newAnimation =
+        directionX > 0 ? ANIM_ENEMY_WALK_RIGHT : ANIM_ENEMY_WALK_LEFT;
+    } else {
+      // Moving more vertically
+      newAnimation = directionY > 0 ? ANIM_ENEMY_WALK_DOWN : ANIM_ENEMY_WALK_UP;
+    }
+
+    // Only change animation if it's different from current
+    if (!this.anims.isPlaying || this.anims.currentAnim?.key !== newAnimation) {
+      this.play(newAnimation);
+    }
+  }
+
+  /**
+   * Stop the enemy's movement
+   */
+  public stopMovement(): void {
+    this.targetX = this.x;
+    this.targetY = this.y;
+
+    // Clear path visualization when stopping movement
+    if (this.currentState === EnemyState.IDLE) {
+      // this.clearPathVisualization();
+    }
+  }
+
+  /**
+   * Get the current movement direction
+   */
+  public getDirection(): { x: number; y: number } {
+    return { ...this.lastDirection };
+  }
+
+  /**
+   * Move towards a specific point with optional callback when reached
+   * @param x Target X coordinate
+   * @param y Target Y coordinate
+   * @param onReached Optional callback when target is reached
+   */
+  public moveTo(x: number, y: number, onReached?: () => void): void {
+    this.setTarget(x, y);
+
+    if (onReached) {
+      // Check if target is reached on next update cycles
+      const checkReached = () => {
+        if (this.hasReachedTarget()) {
+          onReached();
+          this.scene.events.off("postupdate", checkReached);
+        }
+      };
+      this.scene.events.on("postupdate", checkReached);
+    }
+  }
+
+  /**
+   * Set target destination with pathfinding using the specified path layer
+   * @param destinationX Target X coordinate in world space
+   * @param destinationY Target Y coordinate in world space
+   * @param pathLayer The tilemap layer to use for pathfinding
+   */
+  public setTargetWithPath(
+    destinationX: number,
+    destinationY: number,
+    pathLayer: Phaser.Tilemaps.TilemapLayer
+  ): void {
+    this.pathLayer = pathLayer;
+    this.pathDestination = { x: destinationX, y: destinationY };
+    this.currentState = EnemyState.WALKING;
+    this.currentPath = [];
+    this.currentPathIndex = 0;
+
+    // Clear any existing path visualization
+    this.clearPathVisualization();
+  }
+
+  /**
+   * Get current enemy state
+   */
+  public getState(): EnemyState {
+    return this.currentState;
+  }
+
+  /**
+   * Set enemy state
+   */
+  public setEnemyState(state: EnemyState): void {
+    this.currentState = state;
+
+    // Clear path visualization if not walking
+    if (state !== EnemyState.WALKING) {
+      // this.clearPathVisualization();
+    }
+  }
+
+  /**
+   * Debug: Get current path
+   */
+  public getCurrentPath(): Point[] {
+    return [...this.currentPath];
+  }
+
+  /**
+   * Debug: Get current path index
+   */
+  public getCurrentPathIndex(): number {
+    return this.currentPathIndex;
+  }
+
+  /**
+   * Debug: Get path destination
+   */
+  public getPathDestination(): Point | null {
+    return this.pathDestination;
+  }
+
+  /**
+   * Debug: Force clear path visualization
+   */
+  public debugClearVisualization(): void {
+    this.clearPathVisualization();
+  }
+
+  /**
+   * A* pathfinding algorithm to find path through walkable tiles
+   * @param startX Starting tile X coordinate
+   * @param startY Starting tile Y coordinate
+   * @param endX Ending tile X coordinate
+   * @param endY Ending tile Y coordinate
+   * @returns Array of tile coordinates representing the path, or empty array if no path found
+   */
+  private findPath(
+    startX: number,
+    startY: number,
+    endX: number,
+    endY: number
+  ): Point[] {
+    if (!this.pathLayer) return [];
+
+    const openSet: PathNode[] = [];
+    const closedSet: Set<string> = new Set();
+
+    const startNode: PathNode = {
+      x: startX,
+      y: startY,
+      g: 0,
+      h: this.heuristic(startX, startY, endX, endY),
+      f: 0,
+      parent: null,
+    };
+    startNode.f = startNode.g + startNode.h;
+
+    openSet.push(startNode);
+
+    while (openSet.length > 0) {
+      // Find node with lowest f cost
+      let currentNode = openSet[0];
+      let currentIndex = 0;
+
+      for (let i = 1; i < openSet.length; i++) {
+        if (openSet[i].f < currentNode.f) {
+          currentNode = openSet[i];
+          currentIndex = i;
+        }
+      }
+
+      // Remove current node from open set and add to closed set
+      openSet.splice(currentIndex, 1);
+      closedSet.add(`${currentNode.x},${currentNode.y}`);
+
+      // Check if we reached the destination
+      if (currentNode.x === endX && currentNode.y === endY) {
+        return this.reconstructPath(currentNode);
+      }
+
+      // Check all neighbors (including diagonals)
+      const neighbors = this.getNeighbors(currentNode.x, currentNode.y);
+
+      for (const neighbor of neighbors) {
+        const neighborKey = `${neighbor.x},${neighbor.y}`;
+
+        // Skip if already in closed set
+        if (closedSet.has(neighborKey)) continue;
+
+        // Skip if not walkable
+        if (!this.isTileWalkable(neighbor.x, neighbor.y)) continue;
+
+        // Calculate costs
+        const isDiagonal =
+          neighbor.x !== currentNode.x && neighbor.y !== currentNode.y;
+        const moveCost = isDiagonal ? 1.414 : 1; // sqrt(2) for diagonal movement
+        const tentativeG = currentNode.g + moveCost;
+
+        // Check if this path to neighbor is better
+        let neighborNode = openSet.find(
+          (n) => n.x === neighbor.x && n.y === neighbor.y
+        );
+
+        if (!neighborNode) {
+          // Create new node
+          neighborNode = {
+            x: neighbor.x,
+            y: neighbor.y,
+            g: tentativeG,
+            h: this.heuristic(neighbor.x, neighbor.y, endX, endY),
+            f: 0,
+            parent: currentNode,
+          };
+          neighborNode.f = neighborNode.g + neighborNode.h;
+          openSet.push(neighborNode);
+        } else if (tentativeG < neighborNode.g) {
+          // Update existing node with better path
+          neighborNode.g = tentativeG;
+          neighborNode.f = neighborNode.g + neighborNode.h;
+          neighborNode.parent = currentNode;
+        }
+      }
+    }
+
+    // No path found
+    return [];
+  }
+
+  /**
+   * Heuristic function for A* (Manhattan distance with diagonal consideration)
+   */
+  private heuristic(x1: number, y1: number, x2: number, y2: number): number {
+    const dx = Math.abs(x2 - x1);
+    const dy = Math.abs(y2 - y1);
+    return Math.sqrt(dx * dx + dy * dy); // Euclidean distance for diagonal movement
+  }
+
+  /**
+   * Get all neighbor tile coordinates (including diagonals)
+   */
+  private getNeighbors(x: number, y: number): Point[] {
+    return [
+      { x: x - 1, y: y - 1 }, // Top-left
+      { x: x, y: y - 1 }, // Top
+      { x: x + 1, y: y - 1 }, // Top-right
+      { x: x - 1, y: y }, // Left
+      { x: x + 1, y: y }, // Right
+      { x: x - 1, y: y + 1 }, // Bottom-left
+      { x: x, y: y + 1 }, // Bottom
+      { x: x + 1, y: y + 1 }, // Bottom-right
+    ];
+  }
+
+  /**
+   * Check if a tile is walkable (has a tile on the path layer)
+   */
+  private isTileWalkable(tileX: number, tileY: number): boolean {
+    if (!this.pathLayer) return false;
+
+    const tile = this.pathLayer.tilemap.getTileAt(
+      tileX,
+      tileY,
+      false,
+      this.pathLayer.layer.name
+    );
+    return tile !== null && tile.index > 0;
+  }
+
+  /**
+   * Reconstruct the path from the final node
+   */
+  private reconstructPath(endNode: PathNode): Point[] {
+    const path: Point[] = [];
+    let current: PathNode | null = endNode;
+
+    while (current !== null) {
+      path.unshift({ x: current.x, y: current.y });
+      current = current.parent;
+    }
+
+    return path;
+  }
+
+  /**
+   * Get random coordinates within a tile
+   * @param tileX Tile X coordinate
+   * @param tileY Tile Y coordinate
+   * @returns Random world coordinates within the tile
+   */
+  private getRandomCoordinatesInTile(tileX: number, tileY: number): Point {
+    const tileSize = 32; // Assuming 32x32 tiles
+    const padding = 4; // Stay away from tile edges
+
+    const worldX =
+      tileX * tileSize + padding + Math.random() * (tileSize - 2 * padding);
+    const worldY =
+      tileY * tileSize + padding + Math.random() * (tileSize - 2 * padding);
+
+    return { x: worldX, y: worldY };
+  }
+
+  /**
+   * Convert world coordinates to tile coordinates
+   */
+  private worldToTile(worldX: number, worldY: number): Point {
+    return {
+      x: Math.floor(worldX / 32),
+      y: Math.floor(worldY / 32),
+    };
+  }
+
+  /**
+   * Check if two world positions are at the same tile
+   */
+  private areAtSameTile(
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number
+  ): boolean {
+    const tile1 = this.worldToTile(x1, y1);
+    const tile2 = this.worldToTile(x2, y2);
+    return tile1.x === tile2.x && tile1.y === tile2.y;
+  }
+
+  /**
+   * Create path graphics object for debug visualization
+   */
+  private createPathGraphics(): void {
+    if (!DEBUG || this.pathGraphics) return;
+
+    this.pathGraphics = this.scene.add.graphics();
+    this.pathGraphics.setDepth(250); // Above buildings, below UI
+  }
+
+  /**
+   * Draw the current path for debug visualization
+   */
+  private drawPath(): void {
+    if (!DEBUG || !this.pathGraphics || this.currentPath.length === 0) return;
+
+    // Clear previous path
+    this.pathGraphics.clear();
+
+    // Set line style for path
+    this.pathGraphics.lineStyle(2, 0x00ff00, 0.8); // Green line, slightly transparent
+    this.pathGraphics.fillStyle(0x00ff00, 0.6); // Green fill for path points
+
+    // Draw lines connecting path points
+    if (this.currentPath.length > 1) {
+      const startTile = this.currentPath[0];
+      const startWorld = this.tileToWorldCenter(startTile.x, startTile.y);
+
+      this.pathGraphics.beginPath();
+      this.pathGraphics.moveTo(startWorld.x, startWorld.y);
+
+      for (let i = 1; i < this.currentPath.length; i++) {
+        const tile = this.currentPath[i];
+        const worldPos = this.tileToWorldCenter(tile.x, tile.y);
+        this.pathGraphics.lineTo(worldPos.x, worldPos.y);
+      }
+
+      this.pathGraphics.strokePath();
+    }
+
+    // Draw circles at each path point
+    for (let i = 0; i < this.currentPath.length; i++) {
+      const tile = this.currentPath[i];
+      const worldPos = this.tileToWorldCenter(tile.x, tile.y);
+
+      // Different colors for different types of points
+      if (i === 0) {
+        // Start point - blue
+        this.pathGraphics.fillStyle(0x0066ff, 0.8);
+      } else if (i === this.currentPath.length - 1) {
+        // End point - red
+        this.pathGraphics.fillStyle(0xff0000, 0.8);
+      } else {
+        // Path points - green
+        this.pathGraphics.fillStyle(0x00ff00, 0.6);
+      }
+
+      this.pathGraphics.fillCircle(worldPos.x, worldPos.y, 3);
+    }
+
+    // Draw current target with a larger circle
+    if (this.currentPathIndex < this.currentPath.length) {
+      const currentTargetTile = this.currentPath[this.currentPathIndex];
+      if (currentTargetTile) {
+        const targetWorld = this.tileToWorldCenter(
+          currentTargetTile.x,
+          currentTargetTile.y
+        );
+        this.pathGraphics.lineStyle(3, 0xffff00, 1.0); // Yellow outline
+        this.pathGraphics.strokeCircle(targetWorld.x, targetWorld.y, 8);
+
+        // Also draw a line from enemy to current target
+        this.pathGraphics.lineStyle(2, 0xffffff, 0.7); // White line
+        this.pathGraphics.beginPath();
+        this.pathGraphics.moveTo(this.x, this.y);
+        this.pathGraphics.lineTo(targetWorld.x, targetWorld.y);
+        this.pathGraphics.strokePath();
+      }
+    }
+  }
+
+  /**
+   * Clear path visualization
+   */
+  private clearPathVisualization(): void {
+    if (this.pathGraphics) {
+      this.pathGraphics.clear();
+    }
+  }
+
+  /**
+   * Convert tile coordinates to world center coordinates
+   */
+  private tileToWorldCenter(tileX: number, tileY: number): Point {
+    const tileSize = 32;
+    return {
+      x: tileX * tileSize + tileSize / 2,
+      y: tileY * tileSize + tileSize / 2,
+    };
+  }
+
+  /**
+   * Update attacking logic - called from updateForward
+   */
+  private updateAttacking(): void {
+    // Only attack when in ATTACKING state
+    if (this.currentState !== EnemyState.ATTACKING) {
+      return;
+    }
+
+    // Check if we still have a valid attack target
+    if (!this.attackTarget || !this.attackTarget.scene) {
+      this.stopAttacking();
+      return;
+    }
+
+    // Check if target is still in range
+    const distance = Phaser.Math.Distance.Between(
+      this.x,
+      this.y,
+      this.attackTarget.x,
+      this.attackTarget.y
+    );
+
+    if (distance > this.ATTACK_RANGE) {
+      this.stopAttacking();
+      return;
+    }
+  }
+
+  /**
+   * Start attacking a target
+   */
+  public startAttacking(target: Phaser.GameObjects.Sprite): void {
+    if (this.currentState === EnemyState.ATTACKING) {
+      return; // Already attacking
+    }
+
+    this.attackTarget = target;
+    this.currentState = EnemyState.ATTACKING;
+    this.stopMovement();
+
+    // The Goal will handle the actual attack logic and timing
+    console.log("Enemy started attacking target");
+  }
+
+  /**
+   * Stop attacking
+   */
+  public stopAttacking(): void {
+    this.attackTarget = null;
+
+    if (this.attackTimer) {
+      this.attackTimer.destroy();
+      this.attackTimer = undefined;
+    }
+
+    // Return to idle state
+    if (this.currentState === EnemyState.ATTACKING) {
+      this.currentState = EnemyState.IDLE;
+    }
+
+    console.log("Enemy stopped attacking");
+  }
+
+  /**
+   * Check if enemy is currently attacking
+   */
+  public isAttacking(): boolean {
+    return this.currentState === EnemyState.ATTACKING;
+  }
+
+  /**
+   * Get the current attack target
+   */
+  public getAttackTarget(): Phaser.GameObjects.Sprite | null {
+    return this.attackTarget;
+  }
+
+  /**
+   * Main pathfinding update logic - called from updateForward
+   */
+  private updatePathfinding(): void {
+    if (this.currentState !== EnemyState.WALKING || !this.pathDestination) {
+      return;
+    }
+
+    // Create path graphics for debug visualization if needed
+    this.createPathGraphics();
+
+    // Step 1: Check if enemy is at destination
+    if (
+      this.areAtSameTile(
+        this.x,
+        this.y,
+        this.pathDestination.x,
+        this.pathDestination.y
+      )
+    ) {
+      console.debug(
+        "Reached destination",
+        this.x,
+        this.y,
+        this.pathDestination
+      );
+      this.currentState = EnemyState.IDLE;
+      this.stopMovement();
+      return;
+    }
+
+    // Step 2: If we don't have a path, compute one
+    if (this.currentPath.length === 0) {
+      console.debug("Computing new path from", this.x, this.y);
+      const currentTile = this.worldToTile(this.x, this.y);
+      const destinationTile = this.worldToTile(
+        this.pathDestination.x,
+        this.pathDestination.y
+      );
+
+      // Find path using A*
+      this.currentPath = this.findPath(
+        currentTile.x,
+        currentTile.y,
+        destinationTile.x,
+        destinationTile.y
+      );
+
+      if (this.currentPath.length === 0) {
+        console.debug("No path found", this.x, this.y);
+        // No path found - set to IDLE and stop movement
+        this.currentState = EnemyState.IDLE;
+        this.stopMovement();
+        return;
+      }
+
+      // Start from the first tile in the path (skip current position)
+      this.currentPathIndex = Math.min(1, this.currentPath.length - 1);
+
+      // Draw the new path for debug visualization
+      this.drawPath();
+    }
+
+    // Step 3: Check if we need to move to the next tile in the path
+    const currentTile = this.worldToTile(this.x, this.y);
+
+    // If we've reached the current target tile or we're close enough to current target
+    if (
+      this.hasReachedTarget() ||
+      this.currentPathIndex >= this.currentPath.length
+    ) {
+      // Move to next tile in path
+      this.currentPathIndex++;
+
+      if (this.currentPathIndex >= this.currentPath.length) {
+        // We've reached the end of the path, recalculate if not at destination
+        if (
+          !this.areAtSameTile(
+            this.x,
+            this.y,
+            this.pathDestination.x,
+            this.pathDestination.y
+          )
+        ) {
+          console.debug("End of path reached, recalculating...");
+          this.currentPath = [];
+          return; // Will recalculate on next update
+        } else {
+          // We're at destination
+          this.currentState = EnemyState.IDLE;
+          this.stopMovement();
+          return;
+        }
+      }
+    }
+
+    // Step 4: Set target to current path tile with some randomization
+    if (this.currentPathIndex < this.currentPath.length) {
+      const targetTile = this.currentPath[this.currentPathIndex];
+
+      // Only set new target if we're targeting a different tile
+      const currentTargetTile = this.worldToTile(this.targetX, this.targetY);
+      if (
+        targetTile.x !== currentTargetTile.x ||
+        targetTile.y !== currentTargetTile.y
+      ) {
+        const randomCoords = this.getRandomCoordinatesInTile(
+          targetTile.x,
+          targetTile.y
+        );
+        this.setTarget(randomCoords.x, randomCoords.y);
+        console.debug(
+          `Moving to path tile ${this.currentPathIndex}:`,
+          targetTile,
+          "at coords",
+          randomCoords
+        );
+      }
+    }
+
+    // Update path visualization to show current target
+    if (DEBUG) {
+      this.drawPath();
+    }
+  }
+
+  /**
+   * Override rewindTime to handle destruction when rewound to beginning
+   */
+  public rewindTime(amount: number): void {
+    // Call parent method first
+    super.rewindTime(amount);
+
+    // Check if we've been rewound to the very beginning
+    if (
+      this.getTimeMode() === TimeMode.REWIND &&
+      this.getCurrentTimeOffset() === 0
+    ) {
+      // If we're at the beginning of our existence, destroy this enemy
+      console.debug("Enemy rewound to beginning - destroying");
+      this.destroy();
+    }
+  }
+
+  /**
+   * Override destroy to clean up path visualization and flash effects
+   */
+  public destroy(fromScene?: boolean): void {
+    // Clean up flash tween
+    if (this.flashTween) {
+      this.flashTween.stop();
+      this.flashTween = null;
+    }
+
+    // Clean up path visualization
+    if (this.pathGraphics) {
+      this.pathGraphics.destroy();
+      this.pathGraphics = null;
+    }
+
+    super.destroy(fromScene);
+  }
+
+  /**
+   * Override setTimeMode to handle movement restoration when returning from rewind
+   */
+  public setTimeMode(mode: TimeMode): void {
+    const previousMode = this.getTimeMode();
+
+    if (mode === TimeMode.REWIND && previousMode === TimeMode.FORWARD) {
+      // Store current target when entering rewind mode
+      this.storedTargetX = this.targetX;
+      this.storedTargetY = this.targetY;
+    } else if (mode === TimeMode.FORWARD && previousMode === TimeMode.REWIND) {
+      // Dead state is automatically restored by applyCustomStateData
+      // We just need to handle movement logic restoration for living enemies
+
+      // Only resume movement logic if not dead
+      if (!this.isDead) {
+        // Ensure animation is properly restarted if it should be playing
+        this.ensureAnimationIsPlaying();
+
+        if (this.pathDestination) {
+          // Clear current path and reset index to force recalculation from current position
+          this.currentPath = [];
+          this.currentPathIndex = 0;
+          this.currentState = EnemyState.WALKING;
+          console.debug(
+            "Returning from rewind - will recalculate path from current position"
+          );
+        } else {
+          // Only restore target if we don't have a path destination
+          this.targetX = this.storedTargetX;
+          this.targetY = this.storedTargetY;
+        }
+      }
+    }
+
+    // Call parent method
+    super.setTimeMode(mode);
+  }
+
+  // Write your code here.
+
+  /* END-USER-CODE */
+}
+
+/* END OF COMPILED CODE */
+
+// You can write more code here

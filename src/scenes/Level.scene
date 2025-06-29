@@ -1,0 +1,109 @@
+{
+    "id": "b685c081-ee5f-4b67-b583-415922c9e2c4",
+    "sceneType": "SCENE",
+    "settings": {
+        "exportClass": true,
+        "autoImport": true,
+        "preloadPackFiles": [],
+        "createMethodName": "editorCreate",
+        "sceneKey": "Level",
+        "compilerOutputLanguage": "TYPE_SCRIPT",
+        "borderWidth": 640,
+        "borderHeight": 400
+    },
+    "displayList": [
+        {
+            "type": "EditableTilemapLayer",
+            "id": "05046714-695e-48eb-bab0-bfa6f2914055",
+            "label": "ground",
+            "tilemapId": "a29028ea-14dc-427e-a9a4-61c80dae566b"
+        },
+        {
+            "type": "EditableTilemapLayer",
+            "id": "72cb0f7c-5fc2-47cd-b65b-1bb2277e5c16",
+            "label": "path",
+            "tilemapId": "a29028ea-14dc-427e-a9a4-61c80dae566b"
+        },
+        {
+            "prefabId": "b0cbf0a4-1fc3-479c-9e4a-934d32e32cd0",
+            "id": "fa7ddf66-b97d-4f8b-9fd5-473faa32b489",
+            "unlock": [
+                "x",
+                "y"
+            ],
+            "label": "player",
+            "displayName": "player",
+            "x": 97,
+            "y": 220
+        },
+        {
+            "prefabId": "e1687f5a-c920-47ec-b14e-de747040b2cd",
+            "id": "9eec7c41-cb37-4006-8b4a-0bedd99f918c",
+            "unlock": [
+                "x",
+                "y"
+            ],
+            "label": "goal",
+            "x": 623,
+            "y": 208
+        },
+        {
+            "prefabId": "49cff471-f684-440a-a8e0-da1f945cabab",
+            "id": "035c7d1c-a0f3-445c-a0ce-4f4d31acbd9b",
+            "unlock": [
+                "x",
+                "y"
+            ],
+            "label": "enemySpawner",
+            "x": 28,
+            "y": 321
+        }
+    ],
+    "plainObjects": [
+        {
+            "id": "a29028ea-14dc-427e-a9a4-61c80dae566b",
+            "type": "EditableTilemap",
+            "label": "editabletilemap",
+            "width": 20,
+            "height": 12,
+            "tileWidth": 32,
+            "tileHeight": 32,
+            "tilesets": [
+                {
+                    "name": "tiles_ground",
+                    "imageKey": "tiles_ground",
+                    "tileWidth": 32,
+                    "tileHeight": 32,
+                    "tileMargin": 0,
+                    "tileSpacing": 0
+                }
+            ],
+            "paintLayerId": "72cb0f7c-5fc2-47cd-b65b-1bb2277e5c16",
+            "paintTileset": "tiles_ground",
+            "layers": [
+                {
+                    "name": "ground",
+                    "data": "[13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13]",
+                    "width": 20,
+                    "height": 12,
+                    "tileWidth": 32,
+                    "tileHeight": 32
+                },
+                {
+                    "name": "path",
+                    "data": "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,2,2,2,2,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,6,10,10,6,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,7,0,0,5,7,0,0,1,2,2,2,2,3,0,0,0,0,0,0,5,7,0,0,5,7,0,0,5,6,10,10,6,7,0,0,0,0,0,0,5,7,0,0,5,7,0,0,5,7,0,0,5,6,2,2,2,2,0,0,5,7,0,0,5,7,0,0,5,7,0,0,5,6,6,6,6,6,0,0,5,7,0,0,5,6,2,2,6,7,0,0,9,10,10,10,10,10,0,0,5,7,0,0,9,10,10,10,10,11,0,0,0,0,0,0,0,0,2,2,6,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,10,10,10,11,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]",
+                    "width": 20,
+                    "height": 12,
+                    "tileWidth": 32,
+                    "tileHeight": 32
+                }
+            ]
+        }
+    ],
+    "meta": {
+        "app": "Phaser Editor - Scene Editor",
+        "url": "https://phaser.io/editor",
+        "contentType": "phasereditor2d.core.scene.SceneContentType",
+        "version": 5
+    }
+}

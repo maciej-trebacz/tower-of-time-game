@@ -1,0 +1,33 @@
+{
+    "name": "phaser-editor-template-vite-ts",
+    "description": "A Phaser 3 TypeScript template using Vite.",
+    "version": "1.2.1",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/phaserjs/template-vite-ts.git"
+    },
+    "author": "Phaser Studio <support@phaser.io> (https://phaser.io/)",
+    "license": "MIT",
+    "licenseUrl": "http://www.opensource.org/licenses/mit-license.php",
+    "bugs": {
+        "url": "https://github.com/phaserjs/template-vite-ts/issues"
+    },
+    "homepage": "https://github.com/phaserjs/template-vite-ts#readme",
+    "scripts": {
+        "start": "vite --config vite/config.dev.mjs",
+        "dev": "vite --config vite/config.dev.mjs --host",
+        "build": "vite build --config vite/config.prod.mjs && phaser-asset-pack-hashing -j -r dist",
+        "preview": "vite preview --config vite/config.prod.mjs"
+    },
+    "devDependencies": {
+        "phaser-asset-pack-hashing": "^1.0.6",
+        "terser": "^5.28.1",
+        "typescript": "^5.3.3",
+        "vite": "^6.3.5"
+    },
+    "dependencies": {
+        "@phaserjs/editor-scripts-base": "^1.0.0",
+        "phaser": "^3.90.0"
+    },
+    "packageManager": "pnpm@10.11.0+sha512.6540583f41cc5f628eb3d9773ecee802f4f9ef9923cc45b69890fb47991d4b092964694ec3a4f738a420c918a333062c8b925d312f42e4f0c263eb603551f977"
+}

@@ -1,0 +1,85 @@
+{
+    "section1": {
+        "files": [
+            {
+                "url": "assets/animations.json",
+                "type": "animation",
+                "key": "animations"
+            },
+            {
+                "url": "assets/bullet.png",
+                "type": "image",
+                "key": "bullet"
+            },
+            {
+                "url": "assets/energy-crystal.png",
+                "type": "image",
+                "key": "energy-crystal"
+            },
+            {
+                "url": "assets/FufuSuperDino.png",
+                "type": "image",
+                "key": "FufuSuperDino"
+            },
+            {
+                "url": "assets/octonid.png",
+                "frameConfig": {
+                    "frameWidth": 64,
+                    "frameHeight": 64,
+                    "startFrame": 0,
+                    "endFrame": -1,
+                    "spacing": 0,
+                    "margin": 0
+                },
+                "type": "spritesheet",
+                "key": "octonid"
+            },
+            {
+                "url": "assets/player.png",
+                "type": "image",
+                "key": "player"
+            },
+            {
+                "url": "assets/prototype_tileset.png",
+                "type": "image",
+                "key": "prototype_tileset"
+            },
+            {
+                "url": "assets/purple-gem.png",
+                "frameConfig": {
+                    "frameWidth": 32,
+                    "frameHeight": 32,
+                    "startFrame": 0,
+                    "endFrame": -1,
+                    "spacing": 0,
+                    "margin": 0
+                },
+                "type": "spritesheet",
+                "key": "purple-gem"
+            },
+            {
+                "url": "assets/sell.png",
+                "type": "image",
+                "key": "sell"
+            },
+            {
+                "url": "assets/tiles_ground.png",
+                "type": "image",
+                "key": "tiles_ground"
+            },
+            {
+                "url": "assets/tower1.png",
+                "type": "image",
+                "key": "tower1"
+            }
+        ]
+    },
+    "meta": {
+        "app": "Phaser Editor 2D - Asset Pack Editor",
+        "contentType": "phasereditor2d.pack.core.AssetContentType",
+        "url": "https://phasereditor2d.com",
+        "version": 2,
+        "showAllFilesInBlocks": false,
+        "visible": true
+    }
+}

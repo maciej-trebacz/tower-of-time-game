@@ -1,0 +1,3 @@
+Only put code inside blocks specifically marked as "USER CODE" (if they exist in the current source file).
+
+Do not start the dev server after you're done with a task. The server is already running.

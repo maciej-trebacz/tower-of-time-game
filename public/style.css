@@ -1,0 +1,14 @@
+body {
+  margin: 0;
+  padding: 0;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #999999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#game-container {
+  width: 640px;
+  height: 480px;
+}

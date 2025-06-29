@@ -1,0 +1,298 @@
+{
+    "anims": [
+        {
+            "key": "enemy-walk-down",
+            "type": "frame",
+            "frames": [
+                {
+                    "key": "octonid",
+                    "frame": 8,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "octonid",
+                    "frame": 9,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "octonid",
+                    "frame": 10,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "octonid",
+                    "frame": 11,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "octonid",
+                    "frame": 12,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "octonid",
+                    "frame": 13,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "octonid",
+                    "frame": 14,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "octonid",
+                    "frame": 15,
+                    "duration": 0,
+                    "keyframe": false
+                }
+            ],
+            "frameRate": 12,
+            "skipMissedFrames": true,
+            "repeat": -1,
+            "randomFrame": false
+        },
+        {
+            "key": "enemy-walk-left",
+            "type": "frame",
+            "frames": [
+                {
+                    "key": "octonid",
+                    "frame": 48,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "octonid",
+                    "frame": 49,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "octonid",
+                    "frame": 50,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "octonid",
+                    "frame": 51,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "octonid",
+                    "frame": 52,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "octonid",
+                    "frame": 53,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "octonid",
+                    "frame": 54,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "octonid",
+                    "frame": 55,
+                    "duration": 0,
+                    "keyframe": false
+                }
+            ],
+            "frameRate": 12,
+            "skipMissedFrames": true,
+            "repeat": -1,
+            "randomFrame": false
+        },
+        {
+            "key": "enemy-walk-up",
+            "type": "frame",
+            "frames": [
+                {
+                    "key": "octonid",
+                    "frame": 88,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "octonid",
+                    "frame": 89,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "octonid",
+                    "frame": 90,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "octonid",
+                    "frame": 91,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "octonid",
+                    "frame": 92,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "octonid",
+                    "frame": 93,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "octonid",
+                    "frame": 94,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "octonid",
+                    "frame": 95,
+                    "duration": 0,
+                    "keyframe": false
+                }
+            ],
+            "frameRate": 12,
+            "skipMissedFrames": true,
+            "repeat": -1,
+            "randomFrame": false
+        },
+        {
+            "key": "enemy-walk-right",
+            "type": "frame",
+            "frames": [
+                {
+                    "key": "octonid",
+                    "frame": 128,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "octonid",
+                    "frame": 129,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "octonid",
+                    "frame": 130,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "octonid",
+                    "frame": 131,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "octonid",
+                    "frame": 132,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "octonid",
+                    "frame": 133,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "octonid",
+                    "frame": 134,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "octonid",
+                    "frame": 135,
+                    "duration": 0,
+                    "keyframe": false
+                }
+            ],
+            "frameRate": 12,
+            "skipMissedFrames": true,
+            "repeat": -1,
+            "randomFrame": false
+        },
+        {
+            "key": "gem",
+            "type": "frame",
+            "frames": [
+                {
+                    "key": "purple-gem",
+                    "frame": 0,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "purple-gem",
+                    "frame": 1,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "purple-gem",
+                    "frame": 2,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "purple-gem",
+                    "frame": 3,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "purple-gem",
+                    "frame": 4,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "purple-gem",
+                    "frame": 5,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "purple-gem",
+                    "frame": 6,
+                    "duration": 0,
+                    "keyframe": false
+                }
+            ],
+            "frameRate": 8,
+            "skipMissedFrames": true,
+            "repeat": -1,
+            "randomFrame": false
+        }
+    ],
+    "globalTimeScale": 1,
+    "meta": {
+        "app": "Phaser Editor 2D v3",
+        "contentType": "Phaser v3 Animations"
+    },
+    "settings": {
+        "sourceLang": "JAVA_SCRIPT",
+        "esModule": false,
+        "generateCode": false
+    }
+}

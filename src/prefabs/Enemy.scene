@@ -1,0 +1,34 @@
+{
+    "id": "caff8316-1e3b-48d5-b2ce-4be3a9e2c565",
+    "sceneType": "PREFAB",
+    "settings": {
+        "exportClass": true,
+        "autoImport": true,
+        "preloadMethodName": "",
+        "preloadPackFiles": [],
+        "createMethodName": "",
+        "compilerOutputLanguage": "TYPE_SCRIPT",
+        "borderWidth": 32,
+        "borderHeight": 32
+    },
+    "displayList": [
+        {
+            "type": "Sprite",
+            "id": "3f5e787b-2585-423d-b77d-27527ec50da1",
+            "label": "sprite_1",
+            "texture": {
+                "key": "octonid",
+                "frame": 0
+            },
+            "animationPlayMethod": 1,
+            "animationKey": "enemy-walk-down"
+        }
+    ],
+    "plainObjects": [],
+    "meta": {
+        "app": "Phaser Editor - Scene Editor",
+        "url": "https://phaser.io/editor",
+        "contentType": "phasereditor2d.core.scene.SceneContentType",
+        "version": 5
+    }
+}
