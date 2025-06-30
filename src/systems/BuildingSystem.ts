@@ -1,42 +1,28 @@
 import BasicTower from "../prefabs/BasicTower";
+import SniperTower from "../prefabs/SniperTower";
+import SlowdownTower from "../prefabs/SlowdownTower";
+import SplashTower from "../prefabs/SplashTower";
+import Tower from "../prefabs/Tower";
 import EnergySystem from "./EnergySystem";
 import ConfigSystem from "./ConfigSystem";
 
-// Building types enum for extensibility
-export enum BuildingType {
+// Tower types enum for extensibility
+export enum TowerType {
   BASIC_TOWER = "basic_tower",
-  // Future building types can be added here
-  // ADVANCED_TOWER = "advanced_tower",
-  // LASER_TOWER = "laser_tower",
-  // WALL = "wall",
+  SNIPER_TOWER = "sniper_tower",
+  SLOWDOWN_TOWER = "slowdown_tower",
+  SPLASH_TOWER = "splash_tower",
 }
 
-// Building configuration interface
-export interface BuildingConfig {
-  type: BuildingType;
-  name: string;
-  cost: number;
-  energyCost: number; // Energy cost to place the building
-  texture: string;
-  description: string;
-  // Future properties can be added here
-  // damage?: number;
-  // range?: number;
-  // buildTime?: number;
-}
-
-// Building instance interface
-export interface BuildingInstance {
+// Tower instance interface
+export interface TowerInstance {
   id: string;
-  type: BuildingType;
-  config: BuildingConfig;
-  gameObject: Phaser.GameObjects.GameObject;
+  type: TowerType;
+  config: any; // TowerConfig from ConfigSystem
+  gameObject: Tower;
   tileX: number;
   tileY: number;
   level: number; // For upgrades
-  // Future properties can be added here
-  // health?: number;
-  // lastAttackTime?: number;
 }
 
 // Tile coordinate interface
@@ -45,64 +31,52 @@ export interface TileCoordinate {
   y: number;
 }
 
-// Building registry - defines all available building types
-export const BUILDING_REGISTRY: Record<BuildingType, BuildingConfig> = {
-  [BuildingType.BASIC_TOWER]: {
-    type: BuildingType.BASIC_TOWER,
-    name: "Basic Tower",
-    cost: 100,
-    energyCost: 50, // Costs 50 energy to place
-    texture: "tower1",
-    description: "A basic defensive tower",
-  },
-  // Future buildings can be added here
-};
+// Legacy - keeping for backward compatibility but towers are now managed by ConfigSystem
 
 /**
- * Comprehensive building management system
- * Handles building placement, tracking, validation, and future features like upgrades
+ * Comprehensive tower management system
+ * Handles tower placement, tracking, validation, and future features like upgrades
  */
-export class BuildingManager {
+export class TowerManager {
   private scene: Phaser.Scene;
   private tilemap: Phaser.Tilemaps.Tilemap;
-  private buildingLayer: Phaser.GameObjects.Group;
-  private buildings: Map<string, BuildingInstance> = new Map();
-  private tileToBuilding: Map<string, string> = new Map(); // tileKey -> buildingId
-  private nextBuildingId: number = 1;
+  private towerLayer: Phaser.GameObjects.Group;
+  private towers: Map<string, TowerInstance> = new Map();
+  private tileToTower: Map<string, string> = new Map(); // tileKey -> towerId
+  private nextTowerId: number = 1;
   private energySystem?: EnergySystem;
 
-  // Depth constant for buildings (should be below player)
-  private static readonly BUILDING_DEPTH = 100;
+  // Depth constant for towers (should be below player)
+  private static readonly TOWER_DEPTH = 100;
 
   constructor(
     scene: Phaser.Scene,
     tilemap: Phaser.Tilemaps.Tilemap,
-    buildingLayer: Phaser.GameObjects.Group,
+    towerLayer: Phaser.GameObjects.Group,
     energySystem?: EnergySystem
   ) {
     this.scene = scene;
     this.tilemap = tilemap;
-    this.buildingLayer = buildingLayer;
+    this.towerLayer = towerLayer;
     this.energySystem = energySystem;
   }
 
   /**
-   * Get building configurations from ConfigSystem or fallback to registry
+   * Get tower configuration from ConfigSystem
    */
-  private getBuildingConfigs(): Record<string, BuildingConfig> {
-    // Try to get building configs from ConfigSystem if available
+  private getTowerConfig(towerType: TowerType): any | null {
+    // Try to get tower configs from ConfigSystem if available
     if (
       this.scene &&
       typeof (this.scene as any).getConfigSystem === "function"
     ) {
       const configSystem = (this.scene as any).getConfigSystem();
       if (configSystem) {
-        return configSystem.getBuildingsConfig();
+        return configSystem.getTowerConfig(towerType);
       }
     }
 
-    // Fallback to legacy registry
-    return BUILDING_REGISTRY;
+    return null;
   }
 
   /**
@@ -121,8 +95,8 @@ export class BuildingManager {
       return false;
     }
 
-    // Check if there's already a building at this tile
-    if (this.getBuildingAtTile(tileX, tileY)) {
+    // Check if there's already a tower at this tile
+    if (this.getTowerAtTile(tileX, tileY)) {
       return false;
     }
 
@@ -147,11 +121,9 @@ export class BuildingManager {
       return false;
     }
 
-    // Check if there's already a building at this tile
-    if (this.getBuildingAtTile(tileX, tileY)) {
-      console.log(
-        `Cannot build at (${tileX}, ${tileY}): Building already exists`
-      );
+    // Check if there's already a tower at this tile
+    if (this.getTowerAtTile(tileX, tileY)) {
+      console.log(`Cannot build at (${tileX}, ${tileY}): Tower already exists`);
       return false;
     }
 
@@ -169,30 +141,30 @@ export class BuildingManager {
   }
 
   /**
-   * Place a building at the specified tile coordinates
+   * Place a tower at the specified tile coordinates
    */
-  public placeBuilding(
-    buildingType: BuildingType,
+  public placeTower(
+    towerType: TowerType,
     tileX: number,
     tileY: number
-  ): BuildingInstance | null {
+  ): TowerInstance | null {
     if (!this.canBuildAt(tileX, tileY)) {
       return null;
     }
 
-    const buildingConfigs = this.getBuildingConfigs();
-    const config = buildingConfigs[buildingType];
-    if (!config) {
-      console.error(`Unknown building type: ${buildingType}`);
+    // Get tower config from ConfigSystem
+    const towerConfig = this.getTowerConfig(towerType);
+    if (!towerConfig) {
+      console.error(`Unknown tower type: ${towerType}`);
       return null;
     }
 
     // Check energy cost if energy system is available
-    if (this.energySystem && config.energyCost > 0) {
-      if (!this.energySystem.hasEnergy(config.energyCost)) {
+    if (this.energySystem && towerConfig.energyCost > 0) {
+      if (!this.energySystem.hasEnergy(towerConfig.energyCost)) {
         console.log(
-          `Not enough energy to place ${config.name}. Required: ${
-            config.energyCost
+          `Not enough energy to place ${towerConfig.name}. Required: ${
+            towerConfig.energyCost
           }, Available: ${this.energySystem.getCurrentEnergy()}`
         );
         return null;
@@ -203,113 +175,122 @@ export class BuildingManager {
     const worldX = tileX * 32;
     const worldY = tileY * 32;
 
-    // Create the building game object based on type
-    let gameObject: Phaser.GameObjects.GameObject;
+    // Create the tower game object based on type
+    let gameObject: Tower;
 
-    switch (buildingType) {
-      case BuildingType.BASIC_TOWER:
+    switch (towerType) {
+      case TowerType.BASIC_TOWER:
         gameObject = new BasicTower(this.scene, worldX, worldY);
-        this.scene.add.existing(gameObject);
-        // Set depth to ensure buildings render below player
-        gameObject.setDepth(BuildingManager.BUILDING_DEPTH);
-        // Add to building layer for organization
-        this.buildingLayer.add(gameObject);
+        break;
+      case TowerType.SNIPER_TOWER:
+        gameObject = new SniperTower(this.scene, worldX, worldY);
+        break;
+      case TowerType.SLOWDOWN_TOWER:
+        gameObject = new SlowdownTower(this.scene, worldX, worldY);
+        break;
+      case TowerType.SPLASH_TOWER:
+        gameObject = new SplashTower(this.scene, worldX, worldY);
         break;
       default:
         console.error(
-          `No game object creation logic for building type: ${buildingType}`
+          `No game object creation logic for tower type: ${towerType}`
         );
         return null;
     }
 
-    // Create building instance
-    const buildingId = `building_${this.nextBuildingId++}`;
-    const building: BuildingInstance = {
-      id: buildingId,
-      type: buildingType,
-      config,
+    // Configure tower with config from ConfigSystem
+    gameObject.configure(towerConfig);
+
+    // Add to scene and set properties
+    this.scene.add.existing(gameObject);
+    gameObject.setDepth(TowerManager.TOWER_DEPTH);
+    this.towerLayer.add(gameObject);
+
+    // Create tower instance
+    const towerId = `tower_${this.nextTowerId++}`;
+    const tower: TowerInstance = {
+      id: towerId,
+      type: towerType,
+      config: towerConfig,
       gameObject,
       tileX,
       tileY,
       level: 1,
     };
 
-    // Consume energy for building placement
-    if (this.energySystem && config.energyCost > 0) {
+    // Consume energy for tower placement
+    if (this.energySystem && towerConfig.energyCost > 0) {
       this.energySystem.consumeEnergy(
-        config.energyCost,
-        `building_${buildingType}`
+        towerConfig.energyCost,
+        `tower_${towerType}`
       );
     }
 
-    // Register the building
-    this.buildings.set(buildingId, building);
-    this.tileToBuilding.set(this.getTileKey(tileX, tileY), buildingId);
+    // Register the tower
+    this.towers.set(towerId, tower);
+    this.tileToTower.set(this.getTileKey(tileX, tileY), towerId);
 
     console.log(
-      `Placed ${config.name} at (${tileX}, ${tileY}) for ${config.energyCost} energy`
+      `Placed ${towerConfig.name} at (${tileX}, ${tileY}) for ${towerConfig.energyCost} energy`
     );
-    return building;
+    return tower;
   }
 
   /**
-   * Remove a building from the specified tile
+   * Remove a tower from the specified tile
    */
-  public removeBuilding(tileX: number, tileY: number): boolean {
-    const building = this.getBuildingAtTile(tileX, tileY);
-    if (!building) {
+  public removeTower(tileX: number, tileY: number): boolean {
+    const tower = this.getTowerAtTile(tileX, tileY);
+    if (!tower) {
       return false;
     }
 
     // Remove from maps
-    this.buildings.delete(building.id);
-    this.tileToBuilding.delete(this.getTileKey(tileX, tileY));
+    this.towers.delete(tower.id);
+    this.tileToTower.delete(this.getTileKey(tileX, tileY));
 
     // Destroy game object
-    building.gameObject.destroy();
+    tower.gameObject.destroy();
 
     return true;
   }
 
   /**
-   * Get building at specific tile coordinates
+   * Get tower at specific tile coordinates
    */
-  public getBuildingAtTile(
-    tileX: number,
-    tileY: number
-  ): BuildingInstance | null {
+  public getTowerAtTile(tileX: number, tileY: number): TowerInstance | null {
     const tileKey = this.getTileKey(tileX, tileY);
-    const buildingId = this.tileToBuilding.get(tileKey);
-    if (!buildingId) {
+    const towerId = this.tileToTower.get(tileKey);
+    if (!towerId) {
       return null;
     }
-    return this.buildings.get(buildingId) || null;
+    return this.towers.get(towerId) || null;
   }
 
   /**
-   * Get building at player's current position
+   * Get tower at player's current position
    */
-  public getBuildingAtPlayerPosition(
+  public getTowerAtPlayerPosition(
     playerX: number,
     playerY: number
-  ): BuildingInstance | null {
+  ): TowerInstance | null {
     const tileX = Math.floor(playerX / 32);
     const tileY = Math.floor(playerY / 32);
-    return this.getBuildingAtTile(tileX, tileY);
+    return this.getTowerAtTile(tileX, tileY);
   }
 
   /**
-   * Get all buildings
+   * Get all towers
    */
-  public getAllBuildings(): BuildingInstance[] {
-    return Array.from(this.buildings.values());
+  public getAllTowers(): TowerInstance[] {
+    return Array.from(this.towers.values());
   }
 
   /**
-   * Get buildings by type
+   * Get towers by type
    */
-  public getBuildingsByType(type: BuildingType): BuildingInstance[] {
-    return this.getAllBuildings().filter((building) => building.type === type);
+  public getTowersByType(type: TowerType): TowerInstance[] {
+    return this.getAllTowers().filter((tower) => tower.type === type);
   }
 
   /**
@@ -332,63 +313,78 @@ export class BuildingManager {
   }
 
   /**
-   * Future method for upgrading buildings
+   * Future method for upgrading towers
    */
-  public upgradeBuilding(buildingId: string): boolean {
-    const building = this.buildings.get(buildingId);
-    if (!building) {
+  public upgradeTower(towerId: string): boolean {
+    const tower = this.towers.get(towerId);
+    if (!tower) {
       return false;
     }
 
     // TODO: Implement upgrade logic
-    // building.level++;
+    // tower.level++;
     // Update game object appearance/properties
 
     return true;
   }
 
   /**
-   * Future method for getting building stats
+   * Future method for getting tower stats
    */
-  public getBuildingStats(buildingId: string): any {
-    const building = this.buildings.get(buildingId);
-    if (!building) {
+  public getTowerStats(towerId: string): any {
+    const tower = this.towers.get(towerId);
+    if (!tower) {
       return null;
     }
 
-    // TODO: Return building stats based on type and level
+    // TODO: Return tower stats based on type and level
     return {
-      type: building.type,
-      level: building.level,
+      type: tower.type,
+      level: tower.level,
       // Add more stats as needed
     };
   }
 
   /**
-   * Get the building layer for external access
+   * Get the tower layer for external access
    */
-  public getBuildingLayer(): Phaser.GameObjects.Group {
-    return this.buildingLayer;
+  public getTowerLayer(): Phaser.GameObjects.Group {
+    return this.towerLayer;
   }
 
   /**
-   * Get the building depth constant for external use
+   * Get the tower depth constant for external use
    */
-  public static getBuildingDepth(): number {
-    return BuildingManager.BUILDING_DEPTH;
+  public static getTowerDepth(): number {
+    return TowerManager.TOWER_DEPTH;
+  }
+
+  /**
+   * Set pause state for all towers (for rewind system)
+   */
+  public setPaused(paused: boolean): void {
+    this.towers.forEach((tower) => {
+      // Check if the tower has a setPaused method
+      if (
+        tower.gameObject &&
+        typeof (tower.gameObject as any).setPaused === "function"
+      ) {
+        (tower.gameObject as any).setPaused(paused);
+      }
+    });
   }
 
   /**
    * Cleanup method
    */
   public destroy(): void {
-    // Destroy all building game objects
-    this.buildings.forEach((building) => {
-      building.gameObject.destroy();
+    // Destroy all tower game objects
+    this.towers.forEach((tower) => {
+      tower.gameObject.destroy();
     });
 
     // Clear maps
-    this.buildings.clear();
-    this.tileToBuilding.clear();
+    this.towers.clear();
+    this.tileToTower.clear();
   }
 }

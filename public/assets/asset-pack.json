@@ -68,9 +68,29 @@
                 "key": "tiles_ground"
             },
             {
+                "url": "assets/tower.png",
+                "type": "image",
+                "key": "tower"
+            },
+            {
                 "url": "assets/tower1.png",
                 "type": "image",
                 "key": "tower1"
+            },
+            {
+                "url": "assets/tower2.png",
+                "type": "image",
+                "key": "tower2"
+            },
+            {
+                "url": "assets/tower3.png",
+                "type": "image",
+                "key": "tower3"
+            },
+            {
+                "url": "assets/tower4.png",
+                "type": "image",
+                "key": "tower4"
             }
         ]
     },

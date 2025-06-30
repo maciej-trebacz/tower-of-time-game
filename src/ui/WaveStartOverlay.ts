@@ -212,8 +212,8 @@ export default class WaveStartOverlay extends Phaser.GameObjects.Container {
    */
   public destroy(fromScene?: boolean): void {
     // Stop any running tweens
-    this.scene.tweens.killTweensOf(this);
-    this.scene.tweens.killTweensOf(this.waveText);
+    this.scene?.tweens.killTweensOf(this);
+    this.scene?.tweens.killTweensOf(this.waveText);
 
     super.destroy(fromScene);
   }

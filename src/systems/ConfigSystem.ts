@@ -28,10 +28,21 @@ export interface EnemyTypeConfig {
 // Building configuration interface
 export interface BuildingConfig {
   name: string;
-  cost: number;
   energyCost: number;
   texture: string;
   description: string;
+}
+
+// Tower-specific configuration interface
+export interface TowerConfig extends BuildingConfig {
+  range: number;
+  damage: number;
+  shootingInterval: number; // milliseconds between shots
+  bulletSpeed?: number; // pixels per second (for bullet-based towers)
+  effectInterval?: number; // milliseconds between effects (for effect-based towers)
+  effectRadius?: number; // radius for area effects
+  slowAmount?: number; // slow multiplier (0.5 = 50% speed)
+  slowDuration?: number; // milliseconds slow effect lasts
 }
 
 // Energy crystal configuration
@@ -71,13 +82,14 @@ export interface WaveSystemConfig {
 
 // Main configuration interface
 export interface GameConfig {
+  version: number; // Configuration version for migration
   player: PlayerConfig;
   energy: EnergyConfig;
   goal: GoalConfig;
   waveSystem: WaveSystemConfig;
   energyCrystal: EnergyCrystalConfig;
   enemyTypes: Record<string, EnemyTypeConfig>;
-  buildings: Record<string, BuildingConfig>;
+  towers: Record<string, TowerConfig>;
   waves: Wave[];
 }
 
@@ -94,8 +106,22 @@ export default class ConfigSystem {
     // Try to load saved configuration from localStorage first
     const savedConfig = this.loadSavedConfig();
     if (savedConfig) {
-      this.config = this.mergeConfig(this.config, savedConfig);
-      console.log("ConfigSystem loaded saved configuration from localStorage");
+      // Check if migration is needed
+      const migratedConfig = this.migrateConfig(savedConfig);
+      this.config = this.mergeConfig(this.config, migratedConfig);
+
+      // If migration occurred, save the updated config
+      if (migratedConfig !== savedConfig) {
+        console.log(
+          "ConfigSystem migrated configuration to version",
+          this.config.version
+        );
+        this.saveToLocalStorage();
+      } else {
+        console.log(
+          "ConfigSystem loaded saved configuration from localStorage"
+        );
+      }
     }
 
     // Apply any custom configuration overrides
@@ -156,10 +182,19 @@ export default class ConfigSystem {
   }
 
   /**
-   * Get buildings configuration
+   * Get towers configuration
    */
-  public getBuildingsConfig(): Record<string, BuildingConfig> {
-    return { ...this.config.buildings };
+  public getTowersConfig(): Record<string, TowerConfig> {
+    return { ...this.config.towers };
+  }
+
+  /**
+   * Get specific tower configuration
+   */
+  public getTowerConfig(towerType: string): TowerConfig | null {
+    return this.config.towers[towerType]
+      ? { ...this.config.towers[towerType] }
+      : null;
   }
 
   /**
@@ -233,31 +268,11 @@ export default class ConfigSystem {
   }
 
   /**
-   * Update building configuration
-   */
-  public updateBuildingConfig(
-    buildingType: string,
-    updates: Partial<BuildingConfig>
-  ): void {
-    if (this.config.buildings[buildingType]) {
-      this.config.buildings[buildingType] = {
-        ...this.config.buildings[buildingType],
-        ...updates,
-      };
-      console.log(
-        `Building ${buildingType} config updated:`,
-        this.config.buildings[buildingType]
-      );
-    } else {
-      console.warn(`Building type ${buildingType} not found in configuration`);
-    }
-  }
-
-  /**
    * Get default configuration with values extracted from current codebase
    */
   private getDefaultConfig(): GameConfig {
     return {
+      version: 1, // Configuration version for migration
       player: {
         speed: 200, // From Player.ts line 29
       },
@@ -291,36 +306,104 @@ export default class ConfigSystem {
       enemyTypes: {
         BASIC: {
           name: "Basic",
-          speed: 100,
+          speed: 60,
           maxHp: 3,
           tintColor: 0xffffff, // No tint (white/original color)
         },
         FAST: {
           name: "Fast",
-          speed: 150,
+          speed: 100,
           maxHp: 2,
           tintColor: 0x66ff66, // Green tint
         },
         TANK: {
           name: "Tank",
-          speed: 70,
+          speed: 40,
           maxHp: 5,
           tintColor: 0xff6666, // Red tint
         },
       },
 
-      buildings: {
+      towers: {
         basic_tower: {
           name: "Basic Tower",
-          cost: 100, // From BuildingSystem.ts line 52
-          energyCost: 50, // From BuildingSystem.ts line 53
+          energyCost: 20,
           texture: "tower1",
           description: "A basic defensive tower",
+          range: 100, // From BasicTower.ts line 31
+          damage: 1,
+          shootingInterval: 1000, // From BasicTower.ts line 32
+          bulletSpeed: 500, // From Bullet.ts line 33
+        },
+        sniper_tower: {
+          name: "Sniper Tower",
+          energyCost: 40,
+          texture: "tower2",
+          description:
+            "Long range tower with high bullet speed but slow firing rate",
+          range: 200, // Twice the range of basic tower
+          damage: 2,
+          shootingInterval: 2000, // Slower shooting
+          bulletSpeed: 1000, // Twice the bullet speed
+        },
+        slowdown_tower: {
+          name: "Slowdown Tower",
+          energyCost: 50,
+          texture: "tower3",
+          description: "Applies slow effect to enemies in range",
+          range: 80,
+          damage: 0, // No direct damage
+          shootingInterval: 0, // Not used for effect towers
+          effectInterval: 1000, // Apply slow every 1 second
+          effectRadius: 80,
+          slowAmount: 0.5, // 50% speed reduction
+          slowDuration: 3000, // 3 seconds slow duration
+        },
+        splash_tower: {
+          name: "Splash Tower",
+          energyCost: 50,
+          texture: "tower4",
+          description:
+            "Fires area-of-effect blasts that damage all enemies in radius",
+          range: 60,
+          damage: 2,
+          shootingInterval: 2000, // Slower shooting for balance
+          effectRadius: 60, // Blast radius
         },
       },
 
       waves: SAMPLE_WAVES,
     };
+  }
+
+  /**
+   * Migrate configuration from older versions
+   */
+  private migrateConfig(config: Partial<GameConfig>): Partial<GameConfig> {
+    const currentVersion = this.getDefaultConfig().version;
+    const configVersion = config.version || 0;
+
+    if (configVersion >= currentVersion) {
+      return config; // No migration needed
+    }
+
+    console.log(
+      `Migrating config from version ${configVersion} to ${currentVersion}`
+    );
+
+    // Create a copy to avoid modifying the original
+    const migratedConfig = { ...config };
+
+    // Migration from version 0 to 1: Add towers configuration
+    if (configVersion < 1) {
+      migratedConfig.version = 1;
+      // Add towers config if missing - will be merged with defaults
+      if (!migratedConfig.towers) {
+        migratedConfig.towers = {};
+      }
+    }
+
+    return migratedConfig;
   }
 
   /**

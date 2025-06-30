@@ -31,6 +31,7 @@ export default class Bullet extends RewindableSprite {
   private targetY: number = 0;
   private targetEnemy: Enemy | null = null;
   private speed: number = 500; // pixels per second
+  private damage: number = 1; // damage dealt to enemies
   private maxLifetime: number = 3000; // 3 seconds max lifetime
   private creationTime: number = 0;
   private velocityX: number = 0;
@@ -145,6 +146,14 @@ export default class Bullet extends RewindableSprite {
   }
 
   /**
+   * Set bullet damage
+   * @param damage Damage dealt to enemies
+   */
+  public setDamage(damage: number): void {
+    this.damage = damage;
+  }
+
+  /**
    * Set collision radius for the bullet
    * @param radius Collision radius in pixels
    */
@@ -228,8 +237,8 @@ export default class Bullet extends RewindableSprite {
   private hitEnemy(enemy: Enemy): void {
     if (this.isDead) return; // Prevent multiple hits
 
-    // Deal damage to enemy (1 HP by default)
-    enemy.takeDamage(1);
+    // Deal damage to enemy (1 HP by default, can be configured by tower)
+    enemy.takeDamage(this.damage);
 
     console.debug(
       `Bullet hit enemy at (${enemy.x}, ${

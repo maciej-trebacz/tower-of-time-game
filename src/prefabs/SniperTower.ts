@@ -1,6 +1,4 @@
-// You can write more code here
-
-/* START OF COMPILED CODE */
+// SniperTower - Long range tower with high bullet speed but slow firing rate
 
 /* START-USER-IMPORTS */
 import Enemy from "./Enemy";
@@ -8,7 +6,7 @@ import Bullet from "./Bullet";
 import Tower from "./Tower";
 /* END-USER-IMPORTS */
 
-export default class BasicTower extends Tower {
+export default class SniperTower extends Tower {
   constructor(
     scene: Phaser.Scene,
     x?: number,
@@ -16,7 +14,7 @@ export default class BasicTower extends Tower {
     texture?: string,
     frame?: number | string
   ) {
-    super(scene, x ?? 578, y ?? 372, texture || "tower1", frame);
+    super(scene, x ?? 578, y ?? 372, texture || "tower2", frame);
 
     this.setOrigin(0, 0);
 
@@ -28,11 +26,11 @@ export default class BasicTower extends Tower {
 
   /* START-USER-CODE */
 
-  // BasicTower-specific properties
+  // SniperTower-specific properties
   private bullets: Bullet[] = [];
 
   /**
-   * BasicTower-specific update logic
+   * SniperTower-specific update logic
    */
   protected updateTowerLogic(currentTime: number): void {
     // Shoot at target if we have one and shooting cooldown is ready
@@ -87,7 +85,9 @@ export default class BasicTower extends Tower {
       bullet.setDepth(150);
     }
 
-    console.debug(`Tower fired bullet at enemy at (${targetX}, ${targetY})`);
+    console.debug(
+      `SniperTower fired bullet at enemy at (${targetX}, ${targetY})`
+    );
   }
 
   /**
@@ -127,35 +127,5 @@ export default class BasicTower extends Tower {
     super.destroy(fromScene);
   }
 
-  /**
-   * Pause tower operations (called during rewind)
-   */
-  public pauseTower(): void {
-    this.isPaused = true;
-    this.currentTarget = null; // Clear current target when paused
-    console.debug("Tower paused for rewind");
-  }
-
-  /**
-   * Resume tower operations (called when exiting rewind)
-   */
-  public resumeTower(): void {
-    this.isPaused = false;
-    console.debug("Tower resumed from rewind");
-  }
-
-  /**
-   * Check if tower is currently paused
-   */
-  public isPaused_(): boolean {
-    return this.isPaused;
-  }
-
-  // Write your code here.
-
   /* END-USER-CODE */
 }
-
-/* END OF COMPILED CODE */
-
-// You can write more code here

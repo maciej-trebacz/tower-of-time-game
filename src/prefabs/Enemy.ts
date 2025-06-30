@@ -12,7 +12,7 @@ import {
 import RewindableSprite, { TimeMode } from "../components/RewindableSprite";
 import EnergyCrystal from "./EnergyCrystal";
 import { DEBUG } from "../main";
-import ConfigSystem, { EnemyTypeConfig } from "../systems/ConfigSystem";
+import { EnemyTypeConfig } from "../systems/ConfigSystem";
 /* END-USER-IMPORTS */
 
 // Enemy type definitions - now imported from ConfigSystem
@@ -91,10 +91,16 @@ export default class Enemy extends RewindableSprite {
   private targetX: number = 0;
   private targetY: number = 0;
   private speed: number = 100;
+  private baseSpeed: number = 100; // Store original speed for slow effects
   private movementThreshold: number = 3;
   private lastDirection: { x: number; y: number } = { x: 0, y: 1 };
   private storedTargetX: number = 0; // Store target when entering rewind
   private storedTargetY: number = 0;
+
+  // Slow effect properties
+  private slowEndTime: number = 0; // When current slow effect ends
+  private slowMultiplier: number = 1.0; // Current slow multiplier
+  private isSlowed: boolean = false;
 
   // Pathfinding properties
   private currentState: EnemyState = EnemyState.IDLE;
@@ -145,6 +151,7 @@ export default class Enemy extends RewindableSprite {
 
     // Apply type characteristics
     this.speed = this.enemyConfig.speed;
+    this.baseSpeed = this.enemyConfig.speed; // Initialize base speed for slow effects
     this.maxHp = this.enemyConfig.maxHp;
     this.hp = this.maxHp;
     this.baseTintColor = this.enemyConfig.tintColor;
@@ -178,12 +185,10 @@ export default class Enemy extends RewindableSprite {
    */
   protected getCustomStateData(): Record<string, any> {
     return {
-      isDead: this.isDead,
+      // isDead: this.isDead,
       currentState: this.currentState,
-      hp: this.hp,
+      // hp: this.hp,
       maxHp: this.maxHp,
-      enemyType: this.enemyType,
-      baseTintColor: this.baseTintColor,
     };
   }
 
@@ -205,15 +210,6 @@ export default class Enemy extends RewindableSprite {
 
     if (customData.maxHp !== undefined) {
       this.maxHp = customData.maxHp;
-    }
-
-    if (customData.enemyType !== undefined) {
-      this.enemyType = customData.enemyType;
-      this.enemyConfig = ENEMY_TYPES[this.enemyType] || ENEMY_TYPES.BASIC;
-    }
-
-    if (customData.baseTintColor !== undefined) {
-      this.baseTintColor = customData.baseTintColor;
     }
 
     // Update visibility and behavior based on restored dead state
@@ -256,11 +252,72 @@ export default class Enemy extends RewindableSprite {
   }
 
   /**
-   * Set the movement speed
+   * Set the base movement speed
    * @param speed Speed in pixels per second
    */
   public setSpeed(speed: number): void {
-    this.speed = speed;
+    this.baseSpeed = speed;
+    this.updateEffectiveSpeed();
+  }
+
+  /**
+   * Apply a slow effect to the enemy
+   * @param multiplier Speed multiplier (0.5 = 50% speed)
+   * @param duration Duration in milliseconds
+   */
+  public applySlowEffect(multiplier: number, duration: number): void {
+    const currentTime = Date.now();
+    const newEndTime = currentTime + duration;
+
+    // If already slowed, extend the duration but keep the same multiplier
+    if (this.isSlowed) {
+      this.slowEndTime = Math.max(this.slowEndTime, newEndTime);
+      console.debug(
+        `Extended slow effect duration to ${
+          this.slowEndTime - currentTime
+        }ms remaining`
+      );
+    } else {
+      // Apply new slow effect
+      this.isSlowed = true;
+      this.slowMultiplier = multiplier;
+      this.slowEndTime = newEndTime;
+      this.updateEffectiveSpeed();
+      console.debug(
+        `Applied slow effect: ${multiplier}x speed for ${duration}ms`
+      );
+    }
+  }
+
+  /**
+   * Update the effective speed based on active slow effects
+   */
+  private updateEffectiveSpeed(): void {
+    const currentTime = Date.now();
+
+    // Check if slow effect has expired
+    if (this.isSlowed && currentTime >= this.slowEndTime) {
+      this.isSlowed = false;
+      this.slowMultiplier = 1.0;
+      console.debug("Slow effect expired");
+    }
+
+    // Apply multiplier to base speed
+    this.speed = this.baseSpeed * this.slowMultiplier;
+  }
+
+  /**
+   * Get current slow multiplier
+   */
+  public getSlowMultiplier(): number {
+    return this.slowMultiplier;
+  }
+
+  /**
+   * Check if enemy is currently slowed
+   */
+  public isSlowed_(): boolean {
+    return this.isSlowed;
   }
 
   /**
@@ -513,6 +570,9 @@ export default class Enemy extends RewindableSprite {
     if (this.isDead) {
       return;
     }
+
+    // Update slow effects (remove expired ones)
+    this.updateEffectiveSpeed();
 
     // Handle pathfinding logic first
     this.updatePathfinding();
@@ -1192,6 +1252,8 @@ export default class Enemy extends RewindableSprite {
     super.rewindTime(amount);
 
     // Check if we've been rewound to the very beginning
+    /* Disabled this because with the wave system if we rewind to the beginning 
+    // it will automatically win the wave
     if (
       this.getTimeMode() === TimeMode.REWIND &&
       this.getCurrentTimeOffset() === 0
@@ -1200,6 +1262,7 @@ export default class Enemy extends RewindableSprite {
       console.debug("Enemy rewound to beginning - destroying");
       this.destroy();
     }
+    */
   }
 
   /**

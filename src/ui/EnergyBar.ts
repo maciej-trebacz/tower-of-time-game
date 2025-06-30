@@ -1,6 +1,6 @@
 /**
  * Energy Bar UI Component
- * 
+ *
  * Displays the player's current energy as a visual bar with text
  * Features:
  * - Animated energy bar that smoothly transitions between values
@@ -16,36 +16,41 @@ export default class EnergyBar extends Phaser.GameObjects.Container {
   private background: Phaser.GameObjects.Graphics;
   private energyFill: Phaser.GameObjects.Graphics;
   private energyText: Phaser.GameObjects.Text;
-  
+
   // Bar dimensions and styling
   private readonly BAR_WIDTH = 120;
   private readonly BAR_HEIGHT = 16;
   private readonly BAR_BORDER = 2;
-  
+
   // Animation properties
   private currentDisplayEnergy: number = 0;
   private targetEnergy: number = 0;
-  private animationSpeed: number = 2; // Energy units per frame for smooth animation
+  private animationSpeed: number = 5; // Energy units per frame for smooth animation
 
   // UI depth constant
   public static readonly ENERGY_BAR_DEPTH = 1000;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, energySystem: EnergySystem) {
+  constructor(
+    scene: Phaser.Scene,
+    x: number,
+    y: number,
+    energySystem: EnergySystem
+  ) {
     super(scene, x, y);
-    
+
     this.energySystem = energySystem;
     this.currentDisplayEnergy = energySystem.getCurrentEnergy();
     this.targetEnergy = this.currentDisplayEnergy;
-    
+
     this.setDepth(EnergyBar.ENERGY_BAR_DEPTH);
     this.setScrollFactor(0); // Keep fixed on screen
-    
+
     this.createBarElements();
     this.updateDisplay();
-    
+
     // Subscribe to energy changes
     this.energySystem.onEnergyChange(this.onEnergyChange.bind(this));
-    
+
     console.log("EnergyBar created at", x, y);
   }
 
@@ -74,7 +79,7 @@ export default class EnergyBar extends Phaser.GameObjects.Container {
         fontSize: "12px",
         color: "#ffffff",
         fontFamily: "Arial",
-        align: "center"
+        align: "center",
       }
     );
     this.energyText.setOrigin(0.5, 0.5);
@@ -86,7 +91,7 @@ export default class EnergyBar extends Phaser.GameObjects.Container {
    */
   private onEnergyChange(event: EnergyChangeEvent): void {
     this.targetEnergy = event.currentEnergy;
-    
+
     // For instant changes (like building placement), update immediately
     if (event.reason.includes("building") || event.reason === "reset") {
       this.currentDisplayEnergy = this.targetEnergy;
@@ -99,15 +104,17 @@ export default class EnergyBar extends Phaser.GameObjects.Container {
    */
   private updateDisplay(): void {
     const maxEnergy = this.energySystem.getMaxEnergy();
-    const energyPercentage = maxEnergy > 0 ? this.currentDisplayEnergy / maxEnergy : 0;
-    
+    const energyPercentage =
+      maxEnergy > 0 ? this.currentDisplayEnergy / maxEnergy : 0;
+
     // Clear and redraw the energy fill
     this.energyFill.clear();
-    
+
     if (energyPercentage > 0) {
       // Calculate fill width
-      const fillWidth = (this.BAR_WIDTH - this.BAR_BORDER * 2) * energyPercentage;
-      
+      const fillWidth =
+        (this.BAR_WIDTH - this.BAR_BORDER * 2) * energyPercentage;
+
       // Choose color based on energy level
       let fillColor: number;
       if (energyPercentage > 0.6) {
@@ -117,7 +124,7 @@ export default class EnergyBar extends Phaser.GameObjects.Container {
       } else {
         fillColor = 0xff0000; // Red when low
       }
-      
+
       // Draw the energy fill
       this.energyFill.fillStyle(fillColor, 0.8);
       this.energyFill.fillRoundedRect(
@@ -128,7 +135,7 @@ export default class EnergyBar extends Phaser.GameObjects.Container {
         2
       );
     }
-    
+
     // Update text
     const currentEnergyDisplay = Math.floor(this.currentDisplayEnergy);
     this.energyText.setText(`${currentEnergyDisplay}/${maxEnergy}`);
@@ -141,7 +148,8 @@ export default class EnergyBar extends Phaser.GameObjects.Container {
     // Animate towards target energy
     if (Math.abs(this.currentDisplayEnergy - this.targetEnergy) > 0.1) {
       const diff = this.targetEnergy - this.currentDisplayEnergy;
-      const step = Math.sign(diff) * Math.min(Math.abs(diff), this.animationSpeed);
+      const step =
+        Math.sign(diff) * Math.min(Math.abs(diff), this.animationSpeed);
       this.currentDisplayEnergy += step;
       this.updateDisplay();
     } else if (this.currentDisplayEnergy !== this.targetEnergy) {
@@ -194,7 +202,7 @@ export default class EnergyBar extends Phaser.GameObjects.Container {
     if (this.energySystem) {
       this.energySystem.offEnergyChange(this.onEnergyChange.bind(this));
     }
-    
+
     super.destroy(fromScene);
   }
 
@@ -202,6 +210,8 @@ export default class EnergyBar extends Phaser.GameObjects.Container {
    * Get debug information about the energy bar
    */
   public getDebugInfo(): string {
-    return `EnergyBar: Display=${this.currentDisplayEnergy.toFixed(1)}, Target=${this.targetEnergy}, Visible=${this.visible}`;
+    return `EnergyBar: Display=${this.currentDisplayEnergy.toFixed(
+      1
+    )}, Target=${this.targetEnergy}, Visible=${this.visible}`;
   }
 }

@@ -54,7 +54,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
     // Get scene boundaries
     const sceneWidth = this.scene.scale.width;
-    const sceneHeight = this.scene.scale.height - 96;
+    const sceneHeight = this.scene.scale.height - 32;
 
     // Clamp position to scene boundaries
     const clampedX = Phaser.Math.Clamp(newX, halfWidth, sceneWidth - halfWidth);

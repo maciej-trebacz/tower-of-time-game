@@ -7,7 +7,7 @@ import Goal from "../prefabs/Goal";
 import EnemySpawner from "../prefabs/EnemySpawner";
 /* START-USER-IMPORTS */
 import { MenuItemData } from "../prefabs/PlayerMenu";
-import { BuildingManager, BuildingType } from "../systems/BuildingSystem";
+import { TowerManager, TowerType } from "../systems/BuildingSystem";
 import InputManager from "../components/InputManager";
 import { TimeMode } from "../components/RewindableSprite";
 import { DEBUG } from "../main";
@@ -23,6 +23,7 @@ import GameOverOverlay from "../ui/GameOverOverlay";
 import WaveStartOverlay from "../ui/WaveStartOverlay";
 import CongratulationsOverlay from "../ui/CongratulationsOverlay";
 import ConfigSystem from "../systems/ConfigSystem";
+import StatusBar from "../ui/StatusBar";
 /* END-USER-IMPORTS */
 
 export default class Level extends Phaser.Scene {
@@ -42,7 +43,7 @@ export default class Level extends Phaser.Scene {
         format: 1,
         data: {
           width: 20,
-          height: 12,
+          height: 14,
           orientation: "orthogonal",
           tilewidth: 32,
           tileheight: 32,
@@ -66,7 +67,7 @@ export default class Level extends Phaser.Scene {
               type: "tilelayer",
               name: "ground",
               width: 20,
-              height: 12,
+              height: 14,
               opacity: 1,
               data: [
                 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13,
@@ -84,27 +85,32 @@ export default class Level extends Phaser.Scene {
                 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13,
                 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13,
                 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13,
+                13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13,
+                13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13,
+                13, 13, 13, 13, 13, 13, 13, 13,
               ],
             },
             {
               type: "tilelayer",
               name: "path",
               width: 20,
-              height: 12,
+              height: 14,
               opacity: 1,
               data: [
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 1, 2, 2, 2, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                5, 6, 10, 10, 6, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5,
-                7, 0, 0, 5, 7, 0, 0, 1, 2, 2, 2, 2, 3, 0, 0, 0, 0, 0, 0, 5, 7,
-                0, 0, 5, 7, 0, 0, 5, 6, 10, 10, 6, 7, 0, 0, 0, 0, 0, 0, 5, 7, 0,
-                0, 5, 7, 0, 0, 5, 7, 0, 0, 5, 6, 2, 2, 2, 2, 0, 0, 5, 7, 0, 0,
-                5, 7, 0, 0, 5, 7, 0, 0, 5, 6, 6, 6, 6, 6, 0, 0, 5, 7, 0, 0, 5,
-                6, 2, 2, 6, 7, 0, 0, 9, 10, 10, 10, 10, 10, 0, 0, 5, 7, 0, 0, 9,
-                10, 10, 10, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 6, 7, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 10, 10, 11, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 6,
+                6, 6, 6, 0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 0, 0, 0, 0, 0, 6, 6, 6,
+                6, 6, 0, 6, 6, 6, 0, 0, 0, 0, 6, 6, 0, 0, 0, 0, 0, 0, 0, 6, 6,
+                6, 0, 6, 6, 6, 0, 6, 6, 6, 6, 6, 0, 0, 0, 0, 0, 0, 0, 6, 6, 6,
+                0, 6, 6, 6, 0, 6, 6, 6, 6, 6, 0, 0, 0, 0, 0, 0, 0, 6, 6, 6, 0,
+                6, 6, 6, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 6, 6, 6, 6,
+                6, 6, 0, 6, 0, 0, 6, 6, 6, 6, 6, 6, 0, 0, 0, 6, 6, 6, 6, 6, 6,
+                6, 0, 6, 0, 0, 6, 6, 6, 6, 6, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 6, 0, 0, 6, 6, 0, 0, 6, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                6, 0, 0, 6, 6, 0, 0, 6, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6,
+                0, 0, 6, 6, 0, 0, 6, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 6,
+                6, 6, 6, 0, 0, 6, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0,
               ],
             },
           ],
@@ -127,11 +133,11 @@ export default class Level extends Phaser.Scene {
     this.add.existing(player);
 
     // goal
-    const goal = new Goal(this, 623, 208);
+    const goal = new Goal(this, 576, 385);
     this.add.existing(goal);
 
     // enemySpawner
-    const enemySpawner = new EnemySpawner(this, 28, 321);
+    const enemySpawner = new EnemySpawner(this, 26, 96);
     this.add.existing(enemySpawner);
 
     this.editabletilemap = editabletilemap;
@@ -147,7 +153,7 @@ export default class Level extends Phaser.Scene {
   private tileHighlight!: Phaser.GameObjects.Graphics;
   private currentHighlightTileX: number = -1;
   private currentHighlightTileY: number = -1;
-  private buildingManager!: BuildingManager;
+  private towerManager!: TowerManager;
   private inputManager!: InputManager;
   private wasRewindPressed: boolean = false;
   private rewindIndicator!: Phaser.GameObjects.Graphics;
@@ -156,8 +162,9 @@ export default class Level extends Phaser.Scene {
   private goalHPSystem!: GoalHPSystem;
   private goalHPBar!: GoalHPBar;
   private gameOverOverlay!: GameOverOverlay;
-  private waveStartOverlay!: WaveStartOverlay;
+  private waveStartOverlay: WaveStartOverlay | null = null;
   private congratulationsOverlay!: CongratulationsOverlay;
+  private statusBar!: StatusBar;
   private goal!: Goal;
   private enemySpawner!: EnemySpawner;
   private isGameOver: boolean = false;
@@ -260,7 +267,13 @@ export default class Level extends Phaser.Scene {
         // Store reference to spawner for updates
         this.enemySpawner = spawnerObject;
 
-        // Create Wave Start overlay early so it's ready for wave events
+        // Ensure Wave Start overlay exists and is bound to the current scene
+        if (this.waveStartOverlay && this.waveStartOverlay.scene !== this) {
+          // The overlay belongs to a previous scene instance – destroy it so we can create a fresh one
+          this.waveStartOverlay.destroy();
+          this.waveStartOverlay = null;
+        }
+
         if (!this.waveStartOverlay) {
           this.waveStartOverlay = new WaveStartOverlay(this);
           this.add.existing(this.waveStartOverlay);
@@ -340,11 +353,16 @@ export default class Level extends Phaser.Scene {
     this.add.existing(this.congratulationsOverlay);
     this.uiLayer.add(this.congratulationsOverlay);
 
+    // Create Status Bar
+    this.statusBar = new StatusBar(this);
+    this.add.existing(this.statusBar);
+    this.uiLayer.add(this.statusBar);
+
     // Subscribe to game over events
     this.goalHPSystem.onGameOver(this.handleGameOver.bind(this));
 
-    // Initialize building manager with building layer and energy system
-    this.buildingManager = new BuildingManager(
+    // Initialize tower manager with tower layer and energy system
+    this.towerManager = new TowerManager(
       this,
       this.editabletilemap,
       this.buildingLayer,
@@ -355,12 +373,33 @@ export default class Level extends Phaser.Scene {
     const menuItems: MenuItemData[] = [
       {
         id: "build",
-        icon: "tower1", // Use tower1 texture as build icon
-        action: () => this.handleBuildAction(),
+        icon: "tower",
+        submenu: [
+          {
+            id: "build_basic",
+            icon: "tower1",
+            action: () => this.handleBuildTowerAction(TowerType.BASIC_TOWER),
+          },
+          {
+            id: "build_sniper",
+            icon: "tower2",
+            action: () => this.handleBuildTowerAction(TowerType.SNIPER_TOWER),
+          },
+          {
+            id: "build_slowdown",
+            icon: "tower3",
+            action: () => this.handleBuildTowerAction(TowerType.SLOWDOWN_TOWER),
+          },
+          {
+            id: "build_splash",
+            icon: "tower4",
+            action: () => this.handleBuildTowerAction(TowerType.SPLASH_TOWER),
+          },
+        ],
       },
       {
         id: "sell",
-        icon: "sell", // Placeholder - could be a different icon later
+        icon: "sell",
         action: () => this.handleSellAction(),
       },
     ];
@@ -372,6 +411,10 @@ export default class Level extends Phaser.Scene {
     if (playerMenu) {
       this.uiLayer.add(playerMenu);
       // Menu already has high depth set in its constructor
+
+      // Connect status bar and config system to player menu
+      playerMenu.setStatusBar(this.statusBar);
+      playerMenu.setConfigSystem(this.configSystem);
     }
 
     this.events.emit("scene-awake");
@@ -619,9 +662,11 @@ export default class Level extends Phaser.Scene {
 
     // While rewind is held, rewind 1 step per frame and consume energy
     if (isRewindPressed) {
-      // Consume 1 energy per frame while rewinding
-      if (this.energySystem && this.energySystem.hasEnergy(1)) {
-        this.energySystem.consumeEnergy(1, "rewind");
+      const energyConfig = this.configSystem.getEnergyConfig();
+      const cost = energyConfig.rewindCostPerTick;
+      console.log("Rewind cost: ", cost);
+      if (this.energySystem && this.energySystem.hasEnergy(cost)) {
+        this.energySystem.consumeEnergy(cost, "rewind");
 
         enemies.forEach((enemy) => {
           enemy.rewindTime(1);
@@ -716,11 +761,9 @@ export default class Level extends Phaser.Scene {
    * Get all towers in the scene
    */
   private getAllTowers(): any[] {
-    // Get towers from building manager
-    const buildings = this.buildingManager?.getAllBuildings() || [];
-    return buildings
-      .filter((building) => building.type === "basic_tower")
-      .map((building) => building.gameObject);
+    // Get towers from tower manager
+    const towers = this.towerManager?.getAllTowers() || [];
+    return towers.map((tower) => tower.gameObject);
   }
 
   /**
@@ -736,10 +779,10 @@ export default class Level extends Phaser.Scene {
   }
 
   /**
-   * Handle build action from player menu
+   * Handle build tower action from player menu submenu
    */
-  private handleBuildAction(): void {
-    if (!this.player || !this.buildingManager) return;
+  private handleBuildTowerAction(towerType: TowerType): void {
+    if (!this.player || !this.towerManager) return;
 
     // Get the tile below the player (same as highlighted tile)
     const playerCenterX = this.player.x;
@@ -748,23 +791,19 @@ export default class Level extends Phaser.Scene {
     const tileY = Math.floor(playerCenterY / 32);
 
     // Check if we can build at this location
-    if (!this.buildingManager.canBuildAt(tileX, tileY)) {
+    if (!this.towerManager.canBuildAt(tileX, tileY)) {
       console.log("Cannot build at this location!");
       return;
     }
 
-    // Place a basic tower
-    const building = this.buildingManager.placeBuilding(
-      BuildingType.BASIC_TOWER,
-      tileX,
-      tileY
-    );
+    // Place the specified tower type
+    const tower = this.towerManager.placeTower(towerType, tileX, tileY);
 
-    if (building) {
-      console.log(`Built ${building.config.name} at tile (${tileX}, ${tileY})`);
+    if (tower) {
+      console.log(`Built ${tower.config.name} at tile (${tileX}, ${tileY})`);
       const menuDepth = this.player.getMenu()?.depth || "undefined";
       console.log(
-        `Depths - Building: ${(building.gameObject as any).depth}, Player: ${
+        `Depths - Tower: ${(tower.gameObject as any).depth}, Player: ${
           this.player.depth
         }, Menu: ${menuDepth}`
       );
@@ -777,41 +816,38 @@ export default class Level extends Phaser.Scene {
    * Handle sell action from player menu
    */
   private handleSellAction(): void {
-    if (!this.player || !this.buildingManager) return;
+    if (!this.player || !this.towerManager) return;
 
-    // Get the building at the player's current position
-    const building = this.buildingManager.getBuildingAtPlayerPosition(
+    // Get the tower at the player's current position
+    const tower = this.towerManager.getTowerAtPlayerPosition(
       this.player.x,
       this.player.y
     );
 
-    if (!building) {
-      console.log("No building to sell at this location!");
+    if (!tower) {
+      console.log("No tower to sell at this location!");
       return;
     }
 
-    // Remove the building
-    const success = this.buildingManager.removeBuilding(
-      building.tileX,
-      building.tileY
-    );
+    // Remove the tower
+    const success = this.towerManager.removeTower(tower.tileX, tower.tileY);
 
     if (success) {
-      console.log(
-        `Sold ${building.config.name} for ${building.config.cost / 2} credits`
-      );
+      const energyGained = tower.config.energyCost / 2;
+      console.log(`Sold ${tower.config.name} for ${energyGained} energy`);
+      this.energySystem.addEnergy(energyGained, "sell");
     } else {
-      console.log("Failed to sell building!");
+      console.log("Failed to sell tower!");
     }
   }
 
   /**
-   * Get the building at the player's current position
+   * Get the tower at the player's current position
    * Public method for external access
    */
-  public getBuildingAtPlayerPosition(): any {
-    if (!this.player || !this.buildingManager) return null;
-    return this.buildingManager.getBuildingAtPlayerPosition(
+  public getTowerAtPlayerPosition(): any {
+    if (!this.player || !this.towerManager) return null;
+    return this.towerManager.getTowerAtPlayerPosition(
       this.player.x,
       this.player.y
     );
@@ -822,11 +858,11 @@ export default class Level extends Phaser.Scene {
    * Public method for external access
    */
   public canBuildAtPlayerPosition(): boolean {
-    if (!this.player || !this.buildingManager) return false;
+    if (!this.player || !this.towerManager) return false;
 
     const tileX = Math.floor(this.player.x / 32);
     const tileY = Math.floor(this.player.y / 32);
-    return this.buildingManager.canBuildAt(tileX, tileY);
+    return this.towerManager.canBuildAt(tileX, tileY);
   }
 
   /**
@@ -875,7 +911,7 @@ export default class Level extends Phaser.Scene {
             waveName ? ` (${waveName})` : ""
           }`
         );
-        this.waveStartOverlay.showWave(waveIndex, waveName);
+        this.waveStartOverlay!.showWave(waveIndex, waveName);
       });
 
       // Subscribe to all waves complete event to show congratulations
@@ -916,7 +952,7 @@ export default class Level extends Phaser.Scene {
             waveName ? ` (${waveName})` : ""
           }`
         );
-        this.waveStartOverlay.showWave(waveIndex, waveName);
+        this.waveStartOverlay!.showWave(waveIndex, waveName);
       });
 
       // Subscribe to all waves complete event to show congratulations
@@ -1031,11 +1067,11 @@ export default class Level extends Phaser.Scene {
     const playerMenu = this.player?.getMenu();
     console.log(`Player menu depth: ${playerMenu?.depth || "undefined"}`);
 
-    // Log building depths
-    const buildings = this.buildingManager?.getAllBuildings() || [];
-    buildings.forEach((building, index) => {
-      const depth = (building.gameObject as any).depth;
-      console.log(`Building ${index + 1} depth: ${depth}`);
+    // Log tower depths
+    const towers = this.towerManager?.getAllTowers() || [];
+    towers.forEach((tower, index) => {
+      const depth = (tower.gameObject as any).depth;
+      console.log(`Tower ${index + 1} depth: ${depth}`);
     });
 
     console.log("Expected depths:");
@@ -1446,10 +1482,7 @@ export default class Level extends Phaser.Scene {
     console.log("=== TOWER DEFENSE TEST ===");
 
     // Count existing towers
-    const towers =
-      this.buildingManager
-        ?.getAllBuildings()
-        .filter((b) => b.type === "basic_tower") || [];
+    const towers = this.towerManager?.getAllTowers() || [];
     console.log(`Existing towers: ${towers.length}`);
 
     // Count enemies
@@ -1509,10 +1542,7 @@ export default class Level extends Phaser.Scene {
    * Call from console: game.scene.getScene('Level').configureTowers(range, interval)
    */
   public configureTowers(range?: number, shootingInterval?: number): void {
-    const towers =
-      this.buildingManager
-        ?.getAllBuildings()
-        .filter((b) => b.type === "basic_tower") || [];
+    const towers = this.towerManager?.getAllTowers() || [];
 
     if (towers.length === 0) {
       console.log("No towers found in scene");

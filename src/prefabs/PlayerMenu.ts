@@ -1,18 +1,28 @@
 import InputManager from "../components/InputManager";
+import StatusBar from "../ui/StatusBar";
+import ConfigSystem, { TowerConfig } from "../systems/ConfigSystem";
 
 export interface MenuItemData {
   id: string;
   icon: string; // texture key for the icon
-  action: () => void;
+  action?: () => void; // Optional for items that open submenus
+  submenu?: MenuItemData[]; // Optional submenu items
 }
 
 export default class PlayerMenu extends Phaser.GameObjects.Container {
   private menuItems: Phaser.GameObjects.Image[] = [];
+  private menuBackgrounds: Phaser.GameObjects.Graphics[] = [];
   private menuItemsData: MenuItemData[] = [];
   private selectedIndex: number = 0;
   private isVisible: boolean = false;
   private inputManager!: InputManager;
   private selector!: Phaser.GameObjects.Graphics;
+  private statusBar?: StatusBar;
+  private configSystem?: ConfigSystem;
+
+  // Submenu support
+  private currentMenuStack: MenuItemData[][] = []; // Stack of menu levels
+  private isInSubmenu: boolean = false;
 
   // Menu should be rendered above everything else
   private static readonly MENU_DEPTH = 1000;
@@ -31,11 +41,15 @@ export default class PlayerMenu extends Phaser.GameObjects.Container {
     x?: number,
     y?: number,
     items: MenuItemData[] = [],
-    inputManager?: InputManager
+    inputManager?: InputManager,
+    statusBar?: StatusBar,
+    configSystem?: ConfigSystem
   ) {
     super(scene, x ?? 0, y ?? 0);
 
     this.menuItemsData = items.slice(0, 4); // Limit to 4 items
+    this.statusBar = statusBar;
+    this.configSystem = configSystem;
 
     // Set high depth to ensure menu is always on top
     this.setDepth(PlayerMenu.MENU_DEPTH);
@@ -55,8 +69,17 @@ export default class PlayerMenu extends Phaser.GameObjects.Container {
     this.menuItems.forEach((item) => item.destroy());
     this.menuItems = [];
 
-    // Create menu items based on data
+    // Clear existing background graphics
+    this.menuBackgrounds.forEach((bg) => bg.destroy());
+    this.menuBackgrounds = [];
+
+    // Create menu items based on data, only if item is defined
     this.menuItemsData.forEach((itemData, index) => {
+      // Skip rendering if item is not defined
+      if (!itemData || !itemData.icon) {
+        return;
+      }
+
       const position = this.positions[index];
 
       // Create background circle
@@ -66,6 +89,7 @@ export default class PlayerMenu extends Phaser.GameObjects.Container {
       bg.lineStyle(2, 0x666666, 1);
       bg.strokeCircle(position.x, position.y, 25);
       this.add(bg);
+      this.menuBackgrounds.push(bg);
 
       // Create icon
       const icon = this.scene.add.image(position.x, position.y, itemData.icon);
@@ -91,6 +115,9 @@ export default class PlayerMenu extends Phaser.GameObjects.Container {
 
     const position = this.positions[this.selectedIndex];
     this.selector.strokeCircle(position.x, position.y, 30);
+
+    // Update status bar with current selection
+    this.updateStatusBar();
   }
 
   private getAdjustedMenuPosition(
@@ -131,12 +158,32 @@ export default class PlayerMenu extends Phaser.GameObjects.Container {
     this.setVisible(true);
     this.isVisible = true;
     this.selectedIndex = 0;
+
+    // Initialize menu stack with current menu
+    this.currentMenuStack = [this.menuItemsData.slice()];
+    this.isInSubmenu = false;
+
     this.updateSelector();
   }
 
   public hide(): void {
     this.setVisible(false);
     this.isVisible = false;
+
+    // Hide status bar when menu is hidden
+    if (this.statusBar) {
+      this.statusBar.hide();
+    }
+
+    // Reset submenu state
+    if (this.currentMenuStack.length > 1) {
+      // Return to root menu
+      this.menuItemsData = this.currentMenuStack[0].slice();
+      this.createMenuItems();
+    }
+    this.currentMenuStack = [];
+    this.isInSubmenu = false;
+    this.selectedIndex = 0;
   }
 
   public isMenuVisible(): boolean {
@@ -146,9 +193,15 @@ export default class PlayerMenu extends Phaser.GameObjects.Container {
   public update(): void {
     if (!this.isVisible || this.menuItemsData.length === 0) return;
 
-    // Handle CANCEL action to close menu
+    // Handle CANCEL action to go back or close menu
     if (this.inputManager.isActionJustPressed("CANCEL")) {
-      this.hide();
+      if (this.isInSubmenu && this.currentMenuStack.length > 1) {
+        // Go back to previous menu level
+        this.goBackToPreviousMenu();
+      } else {
+        // Close menu completely
+        this.hide();
+      }
       return;
     }
 
@@ -186,8 +239,53 @@ export default class PlayerMenu extends Phaser.GameObjects.Container {
   private selectCurrentItem(): void {
     if (this.selectedIndex < this.menuItemsData.length) {
       const selectedItem = this.menuItemsData[this.selectedIndex];
-      selectedItem.action();
-      this.hide();
+
+      if (selectedItem.submenu && selectedItem.submenu.length > 0) {
+        // Open submenu
+        this.openSubmenu(selectedItem.submenu);
+      } else if (selectedItem.action) {
+        // Execute action and close menu
+        selectedItem.action();
+        this.hide();
+      }
+    }
+  }
+
+  /**
+   * Open a submenu
+   */
+  private openSubmenu(submenuItems: MenuItemData[]): void {
+    // Add current menu to stack
+    this.currentMenuStack.push(this.menuItemsData.slice());
+
+    // Set submenu as current menu
+    this.menuItemsData = submenuItems.slice(0, 4); // Limit to 4 items
+    this.isInSubmenu = true;
+    this.selectedIndex = 0;
+
+    // Recreate menu items for submenu
+    this.createMenuItems();
+    this.updateSelector();
+  }
+
+  /**
+   * Go back to previous menu level
+   */
+  private goBackToPreviousMenu(): void {
+    if (this.currentMenuStack.length > 1) {
+      // Remove current menu from stack
+      this.currentMenuStack.pop();
+
+      // Get previous menu
+      const previousMenu =
+        this.currentMenuStack[this.currentMenuStack.length - 1];
+      this.menuItemsData = previousMenu.slice();
+      this.isInSubmenu = this.currentMenuStack.length > 1;
+      this.selectedIndex = 0;
+
+      // Recreate menu items for previous menu
+      this.createMenuItems();
+      this.updateSelector();
     }
   }
 
@@ -216,6 +314,61 @@ export default class PlayerMenu extends Phaser.GameObjects.Container {
       }
       this.updateSelector();
     }
+  }
+
+  /**
+   * Update status bar with current selection information
+   */
+  private updateStatusBar(): void {
+    if (!this.statusBar || !this.isVisible || this.menuItemsData.length === 0) {
+      return;
+    }
+
+    const selectedItem = this.menuItemsData[this.selectedIndex];
+    if (!selectedItem) {
+      this.statusBar.hide();
+      return;
+    }
+
+    // Handle different menu item types
+    if (selectedItem.id === "build") {
+      this.statusBar.showMenuOption("Build", "Select a tower type to build");
+    } else if (selectedItem.id === "sell") {
+      this.statusBar.showMenuOption(
+        "Sell",
+        "Remove a tower and get partial refund"
+      );
+    } else if (selectedItem.id.startsWith("build_") && this.configSystem) {
+      // This is a tower type selection
+      const towerType = selectedItem.id.replace("build_", "") + "_tower";
+      const towerConfig = this.configSystem.getTowerConfig(towerType);
+
+      if (towerConfig) {
+        this.statusBar.showTowerInfo(towerConfig);
+      } else {
+        this.statusBar.showMenuOption(
+          selectedItem.id,
+          "Tower information not available"
+        );
+      }
+    } else {
+      // Generic menu item
+      this.statusBar.showMenuOption(selectedItem.id, "");
+    }
+  }
+
+  /**
+   * Set the status bar reference (for external initialization)
+   */
+  public setStatusBar(statusBar: StatusBar): void {
+    this.statusBar = statusBar;
+  }
+
+  /**
+   * Set the config system reference (for external initialization)
+   */
+  public setConfigSystem(configSystem: ConfigSystem): void {
+    this.configSystem = configSystem;
   }
 
   /**
