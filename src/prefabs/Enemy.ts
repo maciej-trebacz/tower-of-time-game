@@ -42,7 +42,6 @@ export const ENEMY_TYPES: Record<string, EnemyTypeConfig> = {
 export enum EnemyState {
   IDLE = "IDLE",
   WALKING = "WALKING",
-  ATTACKING = "ATTACKING",
   DEAD = "DEAD",
 }
 
@@ -118,11 +117,6 @@ export default class Enemy extends RewindableSprite {
   // Health system
   private maxHp: number = 3; // Default health points
   private hp: number = this.maxHp;
-
-  // Attack system
-  private attackTarget: Phaser.GameObjects.Sprite | null = null;
-  private attackTimer?: Phaser.Time.TimerEvent;
-  private readonly ATTACK_RANGE = 30; // Distance to start attacking
 
   // Visual effects
   private flashTween: Phaser.Tweens.Tween | null = null;
@@ -453,9 +447,6 @@ export default class Enemy extends RewindableSprite {
       this.updateVisibilityBasedOnDeadState();
       this.stopMovement();
 
-      // Stop attacking if currently attacking
-      this.stopAttacking();
-
       // Spawn energy crystal at enemy's position
       this.spawnEnergyCrystal();
 
@@ -576,9 +567,6 @@ export default class Enemy extends RewindableSprite {
 
     // Handle pathfinding logic first
     this.updatePathfinding();
-
-    // Handle attacking logic
-    this.updateAttacking();
 
     // Don't move if we've reached the target
     if (this.hasReachedTarget()) {
@@ -1044,84 +1032,6 @@ export default class Enemy extends RewindableSprite {
       x: tileX * tileSize + tileSize / 2,
       y: tileY * tileSize + tileSize / 2,
     };
-  }
-
-  /**
-   * Update attacking logic - called from updateForward
-   */
-  private updateAttacking(): void {
-    // Only attack when in ATTACKING state
-    if (this.currentState !== EnemyState.ATTACKING) {
-      return;
-    }
-
-    // Check if we still have a valid attack target
-    if (!this.attackTarget || !this.attackTarget.scene) {
-      this.stopAttacking();
-      return;
-    }
-
-    // Check if target is still in range
-    const distance = Phaser.Math.Distance.Between(
-      this.x,
-      this.y,
-      this.attackTarget.x,
-      this.attackTarget.y
-    );
-
-    if (distance > this.ATTACK_RANGE) {
-      this.stopAttacking();
-      return;
-    }
-  }
-
-  /**
-   * Start attacking a target
-   */
-  public startAttacking(target: Phaser.GameObjects.Sprite): void {
-    if (this.currentState === EnemyState.ATTACKING) {
-      return; // Already attacking
-    }
-
-    this.attackTarget = target;
-    this.currentState = EnemyState.ATTACKING;
-    this.stopMovement();
-
-    // The Goal will handle the actual attack logic and timing
-    console.log("Enemy started attacking target");
-  }
-
-  /**
-   * Stop attacking
-   */
-  public stopAttacking(): void {
-    this.attackTarget = null;
-
-    if (this.attackTimer) {
-      this.attackTimer.destroy();
-      this.attackTimer = undefined;
-    }
-
-    // Return to idle state
-    if (this.currentState === EnemyState.ATTACKING) {
-      this.currentState = EnemyState.IDLE;
-    }
-
-    console.log("Enemy stopped attacking");
-  }
-
-  /**
-   * Check if enemy is currently attacking
-   */
-  public isAttacking(): boolean {
-    return this.currentState === EnemyState.ATTACKING;
-  }
-
-  /**
-   * Get the current attack target
-   */
-  public getAttackTarget(): Phaser.GameObjects.Sprite | null {
-    return this.attackTarget;
   }
 
   /**

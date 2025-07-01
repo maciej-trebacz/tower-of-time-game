@@ -24,6 +24,8 @@ import WaveStartOverlay from "../ui/WaveStartOverlay";
 import CongratulationsOverlay from "../ui/CongratulationsOverlay";
 import ConfigSystem from "../systems/ConfigSystem";
 import StatusBar from "../ui/StatusBar";
+import TutorialSystem, { TutorialStep } from "../systems/TutorialSystem";
+import DialogBox from "../ui/DialogBox";
 /* END-USER-IMPORTS */
 
 export default class Level extends Phaser.Scene {
@@ -133,7 +135,7 @@ export default class Level extends Phaser.Scene {
     this.add.existing(player);
 
     // goal
-    const goal = new Goal(this, 576, 385);
+    const goal = new Goal(this, 576, 391);
     this.add.existing(goal);
 
     // enemySpawner
@@ -169,6 +171,10 @@ export default class Level extends Phaser.Scene {
   private enemySpawner!: EnemySpawner;
   private isGameOver: boolean = false;
   private configSystem!: ConfigSystem;
+  private tutorialSystem!: TutorialSystem;
+  private dialogBox!: DialogBox;
+  private isTutorialMode: boolean = true; // Start in tutorial mode by default
+  private tutorialTileHighlight!: Phaser.GameObjects.Graphics;
 
   // Display layers for proper rendering order (bottom to top):
   // groundLayer: Background elements, terrain decorations
@@ -199,6 +205,16 @@ export default class Level extends Phaser.Scene {
 
     // Initialize configuration system
     this.configSystem = new ConfigSystem();
+
+    // Create Tutorial System early (before enemy spawner initialization)
+    this.tutorialSystem = new TutorialSystem(this);
+
+    // Create Dialog Box early so tutorial can use it
+    this.dialogBox = new DialogBox(this, this.inputManager);
+    this.add.existing(this.dialogBox);
+
+    // Setup tutorial event handlers immediately after creation
+    this.setupTutorialEventHandlers();
 
     // Create display layers in proper order (bottom to top)
     this.groundLayer = this.add.group();
@@ -280,9 +296,6 @@ export default class Level extends Phaser.Scene {
           this.uiLayer.add(this.waveStartOverlay);
         }
 
-        // Load and start waves (you can change this to load different wave sets)
-        this.loadDefaultWaves();
-
         console.log("EnemySpawner initialized with wave system");
       } else {
         console.warn("Path layer not found - enemy spawner cannot pathfind");
@@ -306,6 +319,11 @@ export default class Level extends Phaser.Scene {
     // Initialize energy system
     const energyConfig = this.configSystem.getEnergyConfig();
     this.energySystem = new EnergySystem(this, energyConfig);
+
+    // Disable energy regeneration during tutorial until enemies spawn
+    if (this.isTutorialMode) {
+      this.energySystem.setTutorialRegenerationDisabled(true);
+    }
 
     // Create energy bar UI
     const energyBarX = 10; // Left side of screen with padding
@@ -357,6 +375,17 @@ export default class Level extends Phaser.Scene {
     this.statusBar = new StatusBar(this);
     this.add.existing(this.statusBar);
     this.uiLayer.add(this.statusBar);
+
+    // Dialog Box already created earlier, just add to UI layer
+    this.uiLayer.add(this.dialogBox);
+
+    // Create tutorial-specific tile highlight
+    this.tutorialTileHighlight = this.add.graphics();
+    this.tutorialTileHighlight.fillStyle(0xffffff, 0.8);
+    this.tutorialTileHighlight.fillRect(0, 0, 32, 32);
+    this.tutorialTileHighlight.setVisible(false);
+    this.tutorialTileHighlight.setDepth(Level.DEPTH_EFFECTS + 10); // Above normal tile highlight
+    this.effectLayer.add(this.tutorialTileHighlight);
 
     // Subscribe to game over events
     this.goalHPSystem.onGameOver(this.handleGameOver.bind(this));
@@ -417,7 +446,280 @@ export default class Level extends Phaser.Scene {
       playerMenu.setConfigSystem(this.configSystem);
     }
 
+    // Check if tutorial should be skipped
+    if (this.configSystem.getSkipTutorial()) {
+      console.log("Skipping tutorial - starting waves immediately");
+      this.isTutorialMode = false;
+      // Ensure energy regeneration is enabled when skipping tutorial
+      if (this.energySystem) {
+        this.energySystem.setTutorialRegenerationDisabled(false);
+      }
+      this.loadDefaultWaves();
+    } else {
+      this.startTutorial();
+    }
+
     this.events.emit("scene-awake");
+  }
+
+  /**
+   * Setup tutorial system event handlers
+   */
+  private setupTutorialEventHandlers(): void {
+    // Dialog system integration
+    this.tutorialSystem.onDialogShow((text: string, isLast: boolean) => {
+      console.log(
+        `Tutorial dialog show event received: "${text}" (isLast: ${isLast})`
+      );
+      this.dialogBox.show(text, () => {
+        console.log("Tutorial dialog confirmed by player");
+        this.tutorialSystem.onDialogConfirmed();
+      });
+    });
+
+    // Add a separate handler for when dialog sequences complete
+    this.tutorialSystem.onStepChange((step: TutorialStep) => {
+      // Hide dialog when moving to non-dialog steps
+      if (
+        step !== TutorialStep.INTRO_DIALOG &&
+        step !== TutorialStep.CRYSTAL_DIALOG &&
+        step !== TutorialStep.SHOW_BUILD_LOCATION &&
+        step !== TutorialStep.POST_BUILD_DIALOG &&
+        step !== TutorialStep.ENEMY_WARNING &&
+        step !== TutorialStep.REWIND_INSTRUCTION &&
+        step !== TutorialStep.FINAL_DIALOG
+      ) {
+        console.log(`Step changed to ${step} - hiding dialog`);
+        this.dialogBox.hide();
+      }
+    });
+
+    // Tile highlighting integration
+    this.tutorialSystem.onTileHighlight(
+      (x: number, y: number, show: boolean) => {
+        if (show) {
+          const worldX = x * 32;
+          const worldY = y * 32;
+          this.tutorialTileHighlight.setPosition(worldX, worldY);
+          this.tutorialTileHighlight.setVisible(true);
+        } else {
+          this.tutorialTileHighlight.setVisible(false);
+        }
+      }
+    );
+
+    // Player menu control integration
+    this.tutorialSystem.onMenuControl(
+      (enabled: boolean, restrictedItems?: string[]) => {
+        const playerMenu = this.player.getMenu();
+        if (playerMenu) {
+          if (enabled && restrictedItems) {
+            // Enable menu with restricted items
+            playerMenu.setRestrictedMode(restrictedItems);
+          } else if (enabled) {
+            // Enable full menu
+            console.log("Level onMenuControl: enabling full menu");
+            playerMenu.setRestrictedMode(undefined);
+          } else {
+            // Disable menu completely
+            playerMenu.setDisabled(true);
+          }
+        }
+      }
+    );
+
+    // Screen flash integration
+    this.tutorialSystem.onScreenFlash((color: number, count: number) => {
+      this.createScreenFlash(color, count);
+    });
+
+    // Enemy spawn integration
+    this.tutorialSystem.onEnemySpawn((type: string, count: number) => {
+      this.spawnTutorialEnemies(type, count);
+
+      // Enable energy regeneration when enemies spawn during tutorial
+      if (this.energySystem && this.isTutorialMode) {
+        this.energySystem.setTutorialRegenerationDisabled(false);
+      }
+    });
+
+    // Tutorial completion integration
+    this.tutorialSystem.onTutorialComplete(() => {
+      this.isTutorialMode = false;
+
+      // Ensure energy regeneration is enabled when tutorial completes
+      if (this.energySystem) {
+        this.energySystem.setTutorialRegenerationDisabled(false);
+      }
+
+      this.loadDefaultWaves();
+    });
+  }
+
+  /**
+   * Start the tutorial sequence
+   */
+  private startTutorial(): void {
+    console.log("Starting tutorial mode");
+    this.tutorialSystem.startTutorial();
+  }
+
+  /**
+   * Update tutorial player position detection
+   */
+  private updateTutorialPlayerPosition(): void {
+    if (!this.player || !this.tutorialSystem) return;
+
+    const targetTile = this.tutorialSystem.getTargetTile();
+    if (!targetTile) return;
+
+    // Get player center position
+    const playerCenterX = this.player.x;
+    const playerCenterY = this.player.y;
+
+    // Convert world position to tile coordinates
+    const playerTileX = Math.floor(playerCenterX / 32);
+    const playerTileY = Math.floor(playerCenterY / 32);
+
+    // Check if player is at target tile
+    if (playerTileX === targetTile.x && playerTileY === targetTile.y) {
+      this.tutorialSystem.onPlayerAtTargetTile();
+    }
+  }
+
+  /**
+   * Update tutorial enemy detection
+   */
+  private updateTutorialEnemyDetection(): void {
+    if (!this.tutorialSystem) return;
+
+    const currentStep = this.tutorialSystem.getCurrentStep();
+
+    if (currentStep === "WAIT_FOR_ENEMIES_AT_TILE") {
+      this.checkEnemiesAtTargetTile();
+    } else if (currentStep === "WAIT_FOR_ENEMIES_KILLED") {
+      this.checkAllEnemiesKilled();
+    }
+  }
+
+  /**
+   * Check if any enemy has reached the target tile (10, 6)
+   */
+  private checkEnemiesAtTargetTile(): void {
+    if (!this.buildingLayer) return;
+
+    const targetTileX = 10;
+    const targetTileY = 6;
+    const targetWorldX = targetTileX * 32;
+    const targetWorldY = targetTileY * 32;
+    const detectionRadius = 32; // One tile radius
+
+    this.buildingLayer.children.entries.forEach((child) => {
+      if (child instanceof Enemy && !child.isDead_() && child.visible) {
+        const distance = Phaser.Math.Distance.Between(
+          child.x,
+          child.y,
+          targetWorldX,
+          targetWorldY
+        );
+
+        if (distance <= detectionRadius) {
+          console.log(
+            `Enemy reached target tile (${targetTileX}, ${targetTileY})`
+          );
+          this.tutorialSystem.onEnemyAtTargetTile();
+          return; // Only need one enemy to trigger this
+        }
+      }
+    });
+  }
+
+  /**
+   * Check if all enemies are killed
+   */
+  private checkAllEnemiesKilled(): void {
+    if (!this.buildingLayer) return;
+
+    let livingEnemyCount = 0;
+    this.buildingLayer.children.entries.forEach((child) => {
+      if (child instanceof Enemy && !child.isDead_() && child.visible) {
+        livingEnemyCount++;
+      }
+    });
+
+    if (livingEnemyCount === 0) {
+      console.log("All enemies killed - tutorial can advance");
+      this.tutorialSystem.onAllEnemiesKilled();
+    }
+  }
+
+  /**
+   * Create screen flash effect for tutorial
+   */
+  private createScreenFlash(color: number, count: number): void {
+    let flashesRemaining = count;
+
+    const flash = () => {
+      if (flashesRemaining <= 0) return;
+
+      // Create flash overlay
+      const flashOverlay = this.add.rectangle(
+        this.scale.width / 2,
+        this.scale.height / 2,
+        this.scale.width,
+        this.scale.height,
+        color,
+        0.7
+      );
+      flashOverlay.setDepth(2000); // Above everything
+      this.uiLayer.add(flashOverlay);
+
+      // Flash animation
+      this.tweens.add({
+        targets: flashOverlay,
+        alpha: 0,
+        duration: 600,
+        ease: "Power2",
+        onComplete: () => {
+          flashOverlay.destroy();
+          flashesRemaining--;
+
+          if (flashesRemaining > 0) {
+            // Wait a bit before next flash
+            this.time.delayedCall(100, flash);
+          }
+        },
+      });
+    };
+
+    flash();
+  }
+
+  /**
+   * Spawn tutorial enemies
+   */
+  private spawnTutorialEnemies(type: string, count: number): void {
+    if (!this.enemySpawner) {
+      console.warn("Enemy spawner not available for tutorial");
+      return;
+    }
+
+    console.log(`Spawning ${count} ${type} enemies for tutorial`);
+
+    // Spawn enemies one by one with a small delay
+    for (let i = 0; i < count; i++) {
+      this.time.delayedCall(i * 500, () => {
+        // Use the enemy spawner's spawnSpecificType method
+        const enemy = this.enemySpawner.spawnSpecificType(type);
+        if (enemy) {
+          console.log(
+            `Tutorial enemy ${i + 1} spawned: ${enemy.getEnemyConfig().name}`
+          );
+        } else {
+          console.warn(`Failed to spawn tutorial enemy ${i + 1}`);
+        }
+      });
+    }
   }
 
   /**
@@ -555,8 +857,29 @@ export default class Level extends Phaser.Scene {
     }
 
     if (this.player) {
-      this.player.update(time, delta);
-      this.updateTileHighlight();
+      // Only update player if no dialog is showing (to prevent menu opening during dialogs)
+      const isDialogShowing =
+        this.dialogBox && this.dialogBox.isDialogVisible();
+      if (!isDialogShowing) {
+        this.player.update(time, delta);
+        this.updateTileHighlight();
+
+        // Update tutorial player position detection only when not in dialog
+        if (this.tutorialSystem && this.tutorialSystem.isInTutorial()) {
+          this.updateTutorialPlayerPosition();
+          this.updateTutorialEnemyDetection();
+        }
+      }
+
+      // Always update tutorial system (for timing-based steps)
+      if (this.tutorialSystem && this.tutorialSystem.isInTutorial()) {
+        this.tutorialSystem.update();
+      }
+    }
+
+    // Update dialog box if it exists
+    if (this.dialogBox) {
+      this.dialogBox.update();
 
       // Check for energy crystal collection
       this.checkEnergyCrystalCollection();
@@ -582,6 +905,20 @@ export default class Level extends Phaser.Scene {
    * Handle rewind input logic
    */
   private handleRewindInput(): void {
+    // Check if rewind should be disabled during tutorial
+    if (this.tutorialSystem && this.tutorialSystem.isInTutorial()) {
+      const currentStep = this.tutorialSystem.getCurrentStep();
+      // Disable rewind until we reach the rewind instruction step
+      if (
+        currentStep !== TutorialStep.REWIND_INSTRUCTION &&
+        currentStep !== TutorialStep.WAIT_FOR_ENEMIES_KILLED &&
+        currentStep !== TutorialStep.FINAL_DIALOG &&
+        currentStep !== TutorialStep.TUTORIAL_COMPLETE
+      ) {
+        return; // Exit early, don't process rewind input
+      }
+    }
+
     const isRewindPressed = this.inputManager.isActionPressed("REWIND");
     const enemies = this.getAllEnemies();
     const bullets = this.getAllBullets();
@@ -807,6 +1144,11 @@ export default class Level extends Phaser.Scene {
           this.player.depth
         }, Menu: ${menuDepth}`
       );
+
+      // Notify tutorial system if active
+      if (this.tutorialSystem && this.tutorialSystem.isInTutorial()) {
+        this.tutorialSystem.onTowerPlaced();
+      }
     } else {
       console.log("Failed to build tower!");
     }

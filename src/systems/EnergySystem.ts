@@ -1,6 +1,6 @@
 /**
  * Energy System - Manages player energy for various game actions
- * 
+ *
  * Features:
  * - Energy regeneration over time (1 energy per 5 frames by default)
  * - Energy consumption for actions (building placement, rewind usage)
@@ -30,7 +30,8 @@ export default class EnergySystem {
   private framesSinceLastRegen: number = 0;
   private isRewindMode: boolean = false;
   private scene: Phaser.Scene;
-  
+  private isTutorialRegenerationDisabled: boolean = false;
+
   // Event callbacks
   private onEnergyChangeCallbacks: ((event: EnergyChangeEvent) => void)[] = [];
 
@@ -39,18 +40,24 @@ export default class EnergySystem {
     this.maxEnergy = config.maxEnergy;
     this.regenerationRate = config.regenerationRate;
     this.currentEnergy = config.initialEnergy ?? config.maxEnergy;
-    
-    console.log(`EnergySystem initialized: ${this.currentEnergy}/${this.maxEnergy} energy, regen every ${this.regenerationRate} frames`);
+
+    console.log(
+      `EnergySystem initialized: ${this.currentEnergy}/${this.maxEnergy} energy, regen every ${this.regenerationRate} frames`
+    );
   }
 
   /**
    * Update the energy system - should be called every frame
    */
   public update(): void {
-    // Only regenerate energy if not in rewind mode and not at max energy
-    if (!this.isRewindMode && this.currentEnergy < this.maxEnergy) {
+    // Only regenerate energy if not in rewind mode, not at max energy, and tutorial regeneration is not disabled
+    if (
+      !this.isRewindMode &&
+      !this.isTutorialRegenerationDisabled &&
+      this.currentEnergy < this.maxEnergy
+    ) {
       this.framesSinceLastRegen++;
-      
+
       if (this.framesSinceLastRegen >= this.regenerationRate) {
         this.addEnergy(1, "regeneration");
         this.framesSinceLastRegen = 0;
@@ -63,17 +70,17 @@ export default class EnergySystem {
    */
   public addEnergy(amount: number, reason: string = "unknown"): boolean {
     if (amount <= 0) return false;
-    
+
     const previousEnergy = this.currentEnergy;
     const newEnergy = Math.min(this.maxEnergy, this.currentEnergy + amount);
     const actualChange = newEnergy - this.currentEnergy;
-    
+
     if (actualChange > 0) {
       this.currentEnergy = newEnergy;
       this.notifyEnergyChange(previousEnergy, actualChange, reason);
       return true;
     }
-    
+
     return false;
   }
 
@@ -83,7 +90,7 @@ export default class EnergySystem {
   public consumeEnergy(amount: number, reason: string = "unknown"): boolean {
     if (amount <= 0) return true; // No energy needed
     if (this.currentEnergy < amount) return false; // Not enough energy
-    
+
     const previousEnergy = this.currentEnergy;
     this.currentEnergy -= amount;
     this.notifyEnergyChange(previousEnergy, -amount, reason);
@@ -123,7 +130,7 @@ export default class EnergySystem {
    */
   public setRewindMode(isRewindMode: boolean): void {
     this.isRewindMode = isRewindMode;
-    
+
     // Reset regeneration timer when exiting rewind mode
     if (!isRewindMode) {
       this.framesSinceLastRegen = 0;
@@ -138,18 +145,45 @@ export default class EnergySystem {
   }
 
   /**
+   * Set tutorial regeneration disabled state - prevents energy regeneration during tutorial
+   */
+  public setTutorialRegenerationDisabled(disabled: boolean): void {
+    this.isTutorialRegenerationDisabled = disabled;
+
+    // Reset regeneration timer when enabling regeneration
+    if (!disabled) {
+      this.framesSinceLastRegen = 0;
+    }
+
+    console.log(
+      `Energy regeneration ${disabled ? "disabled" : "enabled"} for tutorial`
+    );
+  }
+
+  /**
+   * Check if tutorial regeneration is disabled
+   */
+  public isTutorialRegenerationDisabledState(): boolean {
+    return this.isTutorialRegenerationDisabled;
+  }
+
+  /**
    * Set maximum energy (useful for upgrades)
    */
   public setMaxEnergy(maxEnergy: number): void {
     if (maxEnergy <= 0) return;
-    
+
     const previousEnergy = this.currentEnergy;
     this.maxEnergy = maxEnergy;
-    
+
     // If current energy exceeds new max, cap it
     if (this.currentEnergy > this.maxEnergy) {
       this.currentEnergy = this.maxEnergy;
-      this.notifyEnergyChange(previousEnergy, this.currentEnergy - previousEnergy, "max_energy_changed");
+      this.notifyEnergyChange(
+        previousEnergy,
+        this.currentEnergy - previousEnergy,
+        "max_energy_changed"
+      );
     }
   }
 
@@ -181,16 +215,20 @@ export default class EnergySystem {
   /**
    * Notify all subscribers of energy changes
    */
-  private notifyEnergyChange(previousEnergy: number, changeAmount: number, reason: string): void {
+  private notifyEnergyChange(
+    previousEnergy: number,
+    changeAmount: number,
+    reason: string
+  ): void {
     const event: EnergyChangeEvent = {
       currentEnergy: this.currentEnergy,
       maxEnergy: this.maxEnergy,
       previousEnergy,
       changeAmount,
-      reason
+      reason,
     };
 
-    this.onEnergyChangeCallbacks.forEach(callback => {
+    this.onEnergyChangeCallbacks.forEach((callback) => {
       try {
         callback(event);
       } catch (error) {
@@ -206,14 +244,22 @@ export default class EnergySystem {
     const previousEnergy = this.currentEnergy;
     this.currentEnergy = this.maxEnergy;
     this.framesSinceLastRegen = 0;
-    this.notifyEnergyChange(previousEnergy, this.maxEnergy - previousEnergy, "reset");
+    this.notifyEnergyChange(
+      previousEnergy,
+      this.maxEnergy - previousEnergy,
+      "reset"
+    );
   }
 
   /**
    * Get debug information about the energy system
    */
   public getDebugInfo(): string {
-    return `Energy: ${this.currentEnergy}/${this.maxEnergy} (${(this.getEnergyPercentage() * 100).toFixed(1)}%) | Rewind: ${this.isRewindMode} | Frames to regen: ${this.regenerationRate - this.framesSinceLastRegen}`;
+    return `Energy: ${this.currentEnergy}/${this.maxEnergy} (${(
+      this.getEnergyPercentage() * 100
+    ).toFixed(1)}%) | Rewind: ${this.isRewindMode} | Frames to regen: ${
+      this.regenerationRate - this.framesSinceLastRegen
+    }`;
   }
 
   /**

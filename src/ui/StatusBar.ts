@@ -26,8 +26,8 @@ export default class StatusBar extends Phaser.GameObjects.Container {
   private extraInfoText: Phaser.GameObjects.Text;
 
   // Status bar dimensions
-  private static readonly HEIGHT = 32;
-  private static readonly DEPTH = 2000; // High depth to appear above most UI elements
+  public static readonly HEIGHT = 32;
+  public static readonly DEPTH = 2000; // High depth to appear above most UI elements
 
   // Text styling
   private static readonly TITLE_STYLE = {

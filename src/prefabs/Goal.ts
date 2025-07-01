@@ -28,14 +28,10 @@ export default class Goal extends Phaser.GameObjects.Sprite {
   /* START-USER-CODE */
 
   private goalHPSystem?: GoalHPSystem;
-  private attackingEnemies: Set<Enemy> = new Set();
-  private attackTimers: Map<Enemy, Phaser.Time.TimerEvent> = new Map();
   private hitFlashTween?: Phaser.Tweens.Tween;
 
   // Goal configuration - will be set from ConfigSystem
-  private collisionRadius: number = 30; // Distance at which enemies can attack
-  private attackDamage: number = 5;
-  private attackInterval: number = 1000; // 1 second in milliseconds
+  private collisionRadius: number = 30; // Distance at which enemies can explode
 
   /**
    * Initialize the goal with HP system
@@ -53,15 +49,11 @@ export default class Goal extends Phaser.GameObjects.Sprite {
       if (configSystem) {
         const goalConfig = configSystem.getGoalConfig();
         this.collisionRadius = goalConfig.collisionRadius;
-        this.attackDamage = goalConfig.attackDamage;
-        this.attackInterval = goalConfig.attackInterval;
       }
     }
 
     console.log("Goal initialized at", this.x, this.y);
-    console.log(
-      `Goal config: collision radius=${this.collisionRadius}, attack damage=${this.attackDamage}, attack interval=${this.attackInterval}`
-    );
+    console.log(`Goal config: collision radius=${this.collisionRadius}`);
   }
 
   /**
@@ -73,7 +65,7 @@ export default class Goal extends Phaser.GameObjects.Sprite {
   }
 
   /**
-   * Update goal logic - check for attacking enemies
+   * Update goal logic - check for enemies that should explode
    */
   public update(): void {
     if (!this.goalHPSystem || this.goalHPSystem.isGameOverState()) {
@@ -84,7 +76,7 @@ export default class Goal extends Phaser.GameObjects.Sprite {
   }
 
   /**
-   * Check for enemies within attack range
+   * Check for enemies within explosion range
    */
   private checkForAttackingEnemies(): void {
     if (!this.scene) return;
@@ -104,100 +96,87 @@ export default class Goal extends Phaser.GameObjects.Sprite {
       );
 
       if (distance <= this.collisionRadius) {
-        // Enemy is in attack range
-        if (!this.attackingEnemies.has(enemy)) {
-          this.startEnemyAttack(enemy);
-        }
-      } else {
-        // Enemy is out of range
-        if (this.attackingEnemies.has(enemy)) {
-          this.stopEnemyAttack(enemy);
-        }
-      }
-    });
-
-    // Clean up any attacking enemies that no longer exist
-    this.attackingEnemies.forEach((enemy) => {
-      if (!enemy.scene || enemy.isDead) {
-        this.stopEnemyAttack(enemy);
+        // Enemy reached the goal - explode it!
+        this.explodeEnemyAtGoal(enemy);
       }
     });
   }
 
   /**
-   * Start an enemy attacking the goal
+   * Handle enemy explosion at goal
    */
-  private startEnemyAttack(enemy: Enemy): void {
-    this.attackingEnemies.add(enemy);
-
-    // Create attack timer for this enemy
-    const attackTimer = this.scene.time.addEvent({
-      delay: this.attackInterval,
-      callback: () => this.enemyAttack(enemy),
-      loop: true,
-    });
-
-    this.attackTimers.set(enemy, attackTimer);
-
-    // Immediate first attack
-    this.enemyAttack(enemy);
-
-    console.log("Enemy started attacking goal");
-  }
-
-  /**
-   * Stop an enemy from attacking the goal
-   */
-  private stopEnemyAttack(enemy: Enemy): void {
-    this.attackingEnemies.delete(enemy);
-
-    // Remove and destroy attack timer
-    const timer = this.attackTimers.get(enemy);
-    if (timer) {
-      timer.destroy();
-      this.attackTimers.delete(enemy);
-    }
-
-    console.log("Enemy stopped attacking goal");
-  }
-
-  /**
-   * Handle an enemy attack on the goal
-   */
-  private enemyAttack(enemy: Enemy): void {
+  private explodeEnemyAtGoal(enemy: Enemy): void {
     if (!this.goalHPSystem || this.goalHPSystem.isGameOverState()) {
-      this.stopEnemyAttack(enemy);
       return;
     }
 
-    // Check if enemy is still in range and alive
+    // Check if enemy is still alive
     if (!enemy.scene || enemy.isDead) {
-      this.stopEnemyAttack(enemy);
       return;
     }
 
-    const distance = Phaser.Math.Distance.Between(
-      this.x,
-      this.y,
-      enemy.x,
-      enemy.y
-    );
+    // Get enemy's current HP for damage calculation
+    const enemyHP = enemy.getHp();
 
-    if (distance > this.collisionRadius) {
-      this.stopEnemyAttack(enemy);
-      return;
-    }
+    // Create explosion effect at enemy's position
+    this.createExplosionEffect(enemy.x, enemy.y);
 
-    // Deal damage to goal
+    // Deal damage to goal equal to enemy's current HP
     const damageDealt = this.goalHPSystem.takeDamage(
-      this.attackDamage,
-      "enemy_attack"
+      enemyHP,
+      "enemy_explosion"
     );
 
     if (damageDealt) {
       this.showHitEffect();
-      console.log(`Goal took ${this.attackDamage} damage from enemy attack`);
+      console.log(`Goal took ${enemyHP} damage from enemy explosion`);
     }
+
+    // Destroy the enemy (it exploded)
+    enemy.markAsDead();
+
+    console.log(`Enemy exploded at goal, dealing ${enemyHP} damage`);
+  }
+
+  /**
+   * Create visual explosion effect
+   */
+  private createExplosionEffect(x: number, y: number): void {
+    // Create explosion graphic similar to SplashTower blast effect
+    const explosionGraphic = this.scene.add.graphics();
+    explosionGraphic.lineStyle(4, 0xff3300, 1); // Red outline
+    explosionGraphic.fillStyle(0xff6600, 0.6); // Semi-transparent orange fill
+
+    // Position the graphics object at the explosion center
+    explosionGraphic.x = x;
+    explosionGraphic.y = y;
+
+    // Draw the explosion circle centered at (0,0) relative to the graphics object
+    const explosionRadius = 25; // Slightly smaller than collision radius
+    explosionGraphic.fillCircle(0, 0, explosionRadius);
+    explosionGraphic.strokeCircle(0, 0, explosionRadius);
+
+    // Add to effect layer if available
+    const layers = (this.scene as any).getLayers?.();
+    if (layers && layers.effect) {
+      layers.effect.add(explosionGraphic);
+      explosionGraphic.setDepth(250); // Above bullets
+    } else {
+      explosionGraphic.setDepth(200);
+    }
+
+    // Animate the explosion effect
+    this.scene.tweens.add({
+      targets: explosionGraphic,
+      scaleX: 2.0,
+      scaleY: 2.0,
+      alpha: 0,
+      duration: 400,
+      ease: "Power2",
+      onComplete: () => {
+        explosionGraphic.destroy();
+      },
+    });
   }
 
   /**
@@ -227,13 +206,6 @@ export default class Goal extends Phaser.GameObjects.Sprite {
   }
 
   /**
-   * Get the number of enemies currently attacking
-   */
-  public getAttackingEnemyCount(): number {
-    return this.attackingEnemies.size;
-  }
-
-  /**
    * Get the collision radius for debugging
    */
   public getCollisionRadius(): number {
@@ -244,11 +216,6 @@ export default class Goal extends Phaser.GameObjects.Sprite {
    * Cleanup when goal is destroyed
    */
   public destroy(fromScene?: boolean): void {
-    // Clean up all attack timers
-    this.attackTimers.forEach((timer) => timer.destroy());
-    this.attackTimers.clear();
-    this.attackingEnemies.clear();
-
     if (this.hitFlashTween) {
       this.hitFlashTween.stop();
     }

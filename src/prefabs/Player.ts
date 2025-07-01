@@ -127,6 +127,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
   // Menu management methods
   public initializeMenu(menuItems: MenuItemData[] = []): void {
+    console.log(`Player initializeMenu: ${menuItems}`);
     if (this.playerMenu) {
       this.playerMenu.destroy();
     }

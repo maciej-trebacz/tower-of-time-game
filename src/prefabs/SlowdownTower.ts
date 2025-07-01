@@ -206,5 +206,29 @@ export default class SlowdownTower extends Tower {
     this.slowDuration = duration;
   }
 
+  /**
+   * Pause tower operations (called during rewind)
+   */
+  public pauseTower(): void {
+    this.isPaused = true;
+    this.currentTarget = null; // Clear current target when paused
+    console.debug("SlowdownTower paused for rewind");
+  }
+
+  /**
+   * Resume tower operations (called when exiting rewind)
+   */
+  public resumeTower(): void {
+    this.isPaused = false;
+    console.debug("SlowdownTower resumed from rewind");
+  }
+
+  /**
+   * Check if tower is currently paused
+   */
+  public isPaused_(): boolean {
+    return this.isPaused;
+  }
+
   /* END-USER-CODE */
 }

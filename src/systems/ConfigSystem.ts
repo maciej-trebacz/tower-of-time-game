@@ -83,6 +83,7 @@ export interface WaveSystemConfig {
 // Main configuration interface
 export interface GameConfig {
   version: number; // Configuration version for migration
+  skipTutorial: boolean; // Skip tutorial and start waves immediately
   player: PlayerConfig;
   energy: EnergyConfig;
   goal: GoalConfig;
@@ -205,6 +206,13 @@ export default class ConfigSystem {
   }
 
   /**
+   * Get skip tutorial setting
+   */
+  public getSkipTutorial(): boolean {
+    return this.config.skipTutorial;
+  }
+
+  /**
    * Update player configuration
    */
   public updatePlayerConfig(updates: Partial<PlayerConfig>): void {
@@ -247,6 +255,14 @@ export default class ConfigSystem {
   }
 
   /**
+   * Update skip tutorial setting
+   */
+  public updateSkipTutorial(skipTutorial: boolean): void {
+    this.config.skipTutorial = skipTutorial;
+    console.log("Skip tutorial setting updated:", skipTutorial);
+  }
+
+  /**
    * Update enemy type configuration
    */
   public updateEnemyTypeConfig(
@@ -273,6 +289,7 @@ export default class ConfigSystem {
   private getDefaultConfig(): GameConfig {
     return {
       version: 1, // Configuration version for migration
+      skipTutorial: false, // Tutorial enabled by default
       player: {
         speed: 200, // From Player.ts line 29
       },
@@ -423,10 +440,20 @@ export default class ConfigSystem {
           !Array.isArray(value) &&
           value !== null
         ) {
-          result[key as keyof GameConfig] = {
-            ...(result[key as keyof GameConfig] as any),
-            ...value,
-          };
+          // Handle object merging with proper typing
+          const baseValue = result[key as keyof GameConfig];
+          if (
+            typeof baseValue === "object" &&
+            !Array.isArray(baseValue) &&
+            baseValue !== null
+          ) {
+            (result as any)[key] = {
+              ...baseValue,
+              ...value,
+            };
+          } else {
+            (result as any)[key] = value;
+          }
         } else {
           (result as any)[key] = value;
         }

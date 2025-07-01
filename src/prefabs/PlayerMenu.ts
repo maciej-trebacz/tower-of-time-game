@@ -24,6 +24,11 @@ export default class PlayerMenu extends Phaser.GameObjects.Container {
   private currentMenuStack: MenuItemData[][] = []; // Stack of menu levels
   private isInSubmenu: boolean = false;
 
+  // Tutorial support
+  private isDisabled: boolean = false;
+  private restrictedItems?: string[];
+  private originalMenuItems: MenuItemData[] = [];
+
   // Menu should be rendered above everything else
   private static readonly MENU_DEPTH = 1000;
 
@@ -153,6 +158,11 @@ export default class PlayerMenu extends Phaser.GameObjects.Container {
   }
 
   public show(x: number, y: number): void {
+    if (this.isDisabled) {
+      console.log("Menu is disabled - cannot show");
+      return;
+    }
+
     const adjustedPosition = this.getAdjustedMenuPosition(x, y);
     this.setPosition(adjustedPosition.x, adjustedPosition.y);
     this.setVisible(true);
@@ -376,5 +386,78 @@ export default class PlayerMenu extends Phaser.GameObjects.Container {
    */
   public static getMenuDepth(): number {
     return PlayerMenu.MENU_DEPTH;
+  }
+
+  /**
+   * Set disabled state for tutorial mode
+   */
+  public setDisabled(disabled: boolean): void {
+    console.log(`PlayerMenu setDisabled: ${disabled}`);
+    this.isDisabled = disabled;
+
+    if (disabled) {
+      // Hide menu if it's currently visible
+      if (this.isVisible) {
+        this.hide();
+      }
+    }
+  }
+
+  /**
+   * Set restricted mode for tutorial - only allow specific menu items
+   */
+  public setRestrictedMode(allowedItems?: string[]): void {
+    this.setDisabled(false);
+
+    if (allowedItems) {
+      // Store original menu items if not already stored
+      if (this.originalMenuItems.length === 0) {
+        this.originalMenuItems = this.menuItemsData.slice();
+      }
+
+      this.restrictedItems = allowedItems;
+
+      // Filter and transform menu items to only show allowed ones
+      const filteredItems = this.originalMenuItems
+        .map((item) => {
+          // For submenu items, check if any child is allowed
+          if (item.submenu) {
+            const allowedSubmenuItems = item.submenu.filter((subItem) =>
+              allowedItems.includes(subItem.id)
+            );
+
+            if (allowedSubmenuItems.length > 0) {
+              // Create a copy with only allowed submenu items
+              return {
+                ...item,
+                submenu: allowedSubmenuItems,
+              };
+            }
+            return null; // No allowed submenu items
+          }
+
+          // For regular items, check if directly allowed
+          return allowedItems.includes(item.id) ? item : null;
+        })
+        .filter((item): item is MenuItemData => item !== null);
+
+      // Update menu items with filtered list
+      console.log("PlayerMenu setRestrictedMode", filteredItems);
+      this.setMenuItems(filteredItems);
+    } else {
+      // Restore original menu items
+      this.restrictedItems = undefined;
+      if (this.originalMenuItems.length > 0) {
+        this.setMenuItems(this.originalMenuItems);
+        this.originalMenuItems = [];
+      }
+    }
+  }
+
+  /**
+   * Check if menu is currently disabled
+   */
+  public isMenuDisabled(): boolean {
+    return this.isDisabled;
   }
 }
