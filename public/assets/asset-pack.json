@@ -63,6 +63,11 @@
                 "key": "sell"
             },
             {
+                "url": "assets/tiles.png",
+                "type": "image",
+                "key": "tiles"
+            },
+            {
                 "url": "assets/tiles_ground.png",
                 "type": "image",
                 "key": "tiles_ground"

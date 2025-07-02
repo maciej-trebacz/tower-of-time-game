@@ -35,6 +35,7 @@ export default class EnemySpawner extends Phaser.GameObjects.Rectangle {
   private buildingLayer?: Phaser.GameObjects.Group;
   private goalBuffer: number = 5; // Distance to stop before the goal (in pixels)
   private waveSystem?: WaveSystem;
+  private rewindRecordingInterval?: number;
 
   /**
    * Initialize the spawner with references to the goal, path layer, and building layer
@@ -59,6 +60,12 @@ export default class EnemySpawner extends Phaser.GameObjects.Rectangle {
     this.waveSystem.setLivingEnemyCountFunction(() => {
       return this.getLivingEnemyCount();
     });
+
+    const configSystem = (this.scene as any).getConfigSystem();
+    const config = configSystem?.getConfig();
+    if (config) {
+      this.rewindRecordingInterval = config.rewindRecordingInterval;
+    }
 
     console.log("EnemySpawner initialized with WaveSystem");
   }
@@ -185,8 +192,10 @@ export default class EnemySpawner extends Phaser.GameObjects.Rectangle {
     // Set enemy depth to match other enemies
     enemy.setDepth(100); // Building layer depth
 
-    // Configure state recording interval for smoother rewind
-    enemy.setStateRecordingInterval(10);
+    // Configure rewind recording interval
+    if (this.rewindRecordingInterval) {
+      enemy.setStateRecordingInterval(this.rewindRecordingInterval);
+    }
 
     // Calculate target position with buffer (stop before reaching the goal)
     const goalX = this.goal.x;

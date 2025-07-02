@@ -84,6 +84,7 @@ export interface WaveSystemConfig {
 export interface GameConfig {
   version: number; // Configuration version for migration
   skipTutorial: boolean; // Skip tutorial and start waves immediately
+  rewindRecordingInterval: number; // How often to record rewind states
   player: PlayerConfig;
   energy: EnergyConfig;
   goal: GoalConfig;
@@ -290,6 +291,7 @@ export default class ConfigSystem {
     return {
       version: 1, // Configuration version for migration
       skipTutorial: false, // Tutorial enabled by default
+      rewindRecordingInterval: 1, // How often to record rewind states
       player: {
         speed: 200, // From Player.ts line 29
       },

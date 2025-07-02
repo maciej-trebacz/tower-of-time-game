@@ -850,14 +850,14 @@ export default class Enemy extends RewindableSprite {
    */
   private getNeighbors(x: number, y: number): Point[] {
     return [
-      { x: x - 1, y: y - 1 }, // Top-left
+      // { x: x - 1, y: y - 1 }, // Top-left
       { x: x, y: y - 1 }, // Top
-      { x: x + 1, y: y - 1 }, // Top-right
+      // { x: x + 1, y: y - 1 }, // Top-right
       { x: x - 1, y: y }, // Left
       { x: x + 1, y: y }, // Right
-      { x: x - 1, y: y + 1 }, // Bottom-left
+      // { x: x - 1, y: y + 1 }, // Bottom-left
       { x: x, y: y + 1 }, // Bottom
-      { x: x + 1, y: y + 1 }, // Bottom-right
+      // { x: x + 1, y: y + 1 }, // Bottom-right
     ];
   }
 

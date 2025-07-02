@@ -25,9 +25,8 @@ export default class RewindableSprite extends Phaser.GameObjects.Sprite {
   private stateHistory: SerializableState[] = [];
   private timeOffset: number = 0;
   private timeMode: TimeMode = TimeMode.FORWARD;
-  private stateRecordingInterval: number = 2; // Record every n updates
+  private stateRecordingInterval: number = 1; // Record every n updates
   private updateCounter: number = 0;
-  private originalAnimationSpeed: number = 1;
   private isPlayingReversedAnimation: boolean = false;
   private lastForwardState: SerializableState | null = null;
 
@@ -182,8 +181,6 @@ export default class RewindableSprite extends Phaser.GameObjects.Sprite {
     }
 
     if (this.anims.currentAnim) {
-      // Store original animation speed and pause for manual control
-      this.originalAnimationSpeed = this.anims.currentAnim.frameRate;
       this.anims.pause(); // We'll handle frame progression manually in rewind
       this.isPlayingReversedAnimation = true;
     }
