@@ -101,12 +101,8 @@ export class TowerManager {
     }
 
     // Check if tile is on the path layer (path tiles cannot have buildings)
-    const pathTile = this.tilemap.getTileAt(tileX, tileY, false, "path");
-    if (pathTile && pathTile.index !== 0) {
-      return false;
-    }
-
-    return true;
+    const pathTile = this.tilemap.getTileAt(tileX, tileY, false, "walls");
+    return !!pathTile;
   }
 
   /**

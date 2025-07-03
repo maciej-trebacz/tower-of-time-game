@@ -4,6 +4,7 @@
 import Enemy from "./Enemy";
 import Bullet from "./Bullet";
 import Tower from "./Tower";
+import GlobalSoundManager from "../utils/GlobalSoundManager";
 /* END-USER-IMPORTS */
 
 export default class SniperTower extends Tower {
@@ -51,6 +52,9 @@ export default class SniperTower extends Tower {
    * @param target Enemy to shoot at
    */
   private shootAtTarget(target: Enemy): void {
+    // Play shoot sound
+    GlobalSoundManager.playSound(this.scene, "shoot");
+
     // Calculate bullet spawn position (center of tower)
     const bulletX = this.x + this.width / 2;
     const bulletY = this.y + this.height / 2;

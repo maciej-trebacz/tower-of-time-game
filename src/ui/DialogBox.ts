@@ -10,10 +10,11 @@
  */
 
 import InputManager from "../components/InputManager";
+import GlobalSoundManager from "../utils/GlobalSoundManager";
 
 export default class DialogBox extends Phaser.GameObjects.Container {
   private background: Phaser.GameObjects.Rectangle;
-  private dialogPanel: Phaser.GameObjects.Rectangle;
+  private dialogPanel: Phaser.GameObjects.Image;
   private dialogText: Phaser.GameObjects.Text;
   private promptText: Phaser.GameObjects.Text;
   private inputManager: InputManager;
@@ -40,30 +41,26 @@ export default class DialogBox extends Phaser.GameObjects.Container {
       0.6
     );
 
-    // Create dialog panel
-    const panelWidth = Math.min(600, scene.scale.width - 40);
-    const panelHeight = 150;
-    this.dialogPanel = scene.add.rectangle(
+    // Create dialog panel using message-box asset
+    const panelWidth = 468;
+    const panelHeight = 129;
+    this.dialogPanel = scene.add.image(
       scene.scale.width / 2,
       scene.scale.height / 2 - 20,
-      panelWidth,
-      panelHeight,
-      0x2a2a2a,
-      0.95
+      "message-box"
     );
-    this.dialogPanel.setStrokeStyle(2, 0xffffff, 0.8);
 
     // Create dialog text
     this.dialogText = scene.add.text(
       scene.scale.width / 2,
-      scene.scale.height / 2 - 40,
+      scene.scale.height / 2 - 35,
       "",
       {
-        fontSize: "18px",
-        fontFamily: "Arial, sans-serif",
+        fontSize: "16px",
+        fontFamily: "Orbitron",
         color: "#ffffff",
         align: "center",
-        wordWrap: { width: panelWidth - 40 },
+        wordWrap: { width: panelWidth - 60 },
         lineSpacing: 4,
       }
     );
@@ -72,11 +69,11 @@ export default class DialogBox extends Phaser.GameObjects.Container {
     // Create prompt text
     this.promptText = scene.add.text(
       scene.scale.width / 2,
-      scene.scale.height / 2 + 40,
-      "Press Action to continue...",
+      scene.scale.height / 2 + 15,
+      "Press Spacebar to continue...",
       {
-        fontSize: "14px",
-        fontFamily: "Arial, sans-serif",
+        fontSize: "13px",
+        fontFamily: "Courier New",
         color: "#cccccc",
         align: "center",
         fontStyle: "italic",
@@ -169,6 +166,9 @@ export default class DialogBox extends Phaser.GameObjects.Container {
    */
   private handleConfirm(): void {
     console.log("Dialog confirmed");
+
+    // Play menu select sound
+    GlobalSoundManager.playSound(this.scene, "menu-select");
 
     // Call the confirmation callback
     if (this.onConfirmCallback) {

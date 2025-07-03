@@ -6,6 +6,7 @@
 import Enemy from "./Enemy";
 import GoalHPSystem from "../systems/GoalHPSystem";
 import ConfigSystem from "../systems/ConfigSystem";
+import GlobalSoundManager from "../utils/GlobalSoundManager";
 /* END-USER-IMPORTS */
 
 export default class Goal extends Phaser.GameObjects.Sprite {
@@ -128,6 +129,9 @@ export default class Goal extends Phaser.GameObjects.Sprite {
 
     // Get enemy's current HP for damage calculation
     const enemyHP = enemy.getHp();
+
+    // Play explosion sound
+    GlobalSoundManager.playSound(this.scene, "explosion");
 
     // Create explosion effect at enemy's position
     this.createExplosionEffect(enemy.x, enemy.y);

@@ -3,6 +3,7 @@
 /* START-USER-IMPORTS */
 import Enemy from "./Enemy";
 import Tower from "./Tower";
+import GlobalSoundManager from "../utils/GlobalSoundManager";
 /* END-USER-IMPORTS */
 
 export default class SlowdownTower extends Tower {
@@ -73,6 +74,9 @@ export default class SlowdownTower extends Tower {
     if (enemiesInRange.length === 0) {
       return;
     }
+
+    // Play slow sound
+    GlobalSoundManager.playSound(this.scene, "slow");
 
     enemiesInRange.forEach((enemy) => {
       enemy.applySlowEffect(this.slowAmount, this.slowDuration);

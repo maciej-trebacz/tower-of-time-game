@@ -4,6 +4,8 @@ import Preload from "./scenes/Preload";
 import Title from "./scenes/Title";
 import Configure from "./scenes/Configure";
 import GlobalKeyHandler from "./utils/GlobalKeyHandler";
+import GlobalMusicManager from "./utils/GlobalMusicManager";
+import GlobalSoundManager from "./utils/GlobalSoundManager";
 
 export const DEBUG = false;
 
@@ -63,6 +65,14 @@ function startGame() {
     if ((window as any).globalKeyHandler) {
       (window as any).globalKeyHandler.destroy();
     }
+    // Destroy global music manager if it exists
+    if ((window as any).globalMusicManager) {
+      (window as any).globalMusicManager.destroy();
+    }
+    // Destroy global sound manager if it exists
+    if ((window as any).globalSoundManager) {
+      (window as any).globalSoundManager.destroy();
+    }
     (window as any).game.destroy(true);
   }
 
@@ -74,6 +84,14 @@ function startGame() {
   (window as any).globalKeyHandler = GlobalKeyHandler.initialize(
     (window as any).game
   );
+
+  // Initialize global music manager
+  (window as any).globalMusicManager = GlobalMusicManager.initialize(
+    (window as any).game
+  );
+
+  // Initialize global sound manager
+  (window as any).globalSoundManager = GlobalSoundManager.getInstance();
 
   (window as any).game.scene.start("Boot");
 }

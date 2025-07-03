@@ -76,10 +76,12 @@ export default class EnergyBar extends Phaser.GameObjects.Container {
       this.BAR_HEIGHT / 2,
       "",
       {
-        fontSize: "12px",
+        fontSize: "10px",
         color: "#ffffff",
         fontFamily: "Arial",
         align: "center",
+        stroke: "#000000",
+        strokeThickness: 1,
       }
     );
     this.energyText.setOrigin(0.5, 0.5);

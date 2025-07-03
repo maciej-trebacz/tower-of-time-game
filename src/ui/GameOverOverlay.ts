@@ -145,7 +145,7 @@ export default class GameOverOverlay extends Phaser.GameObjects.Container {
     this.add(this.instructionText);
 
     // Restart button
-    this.createRestartButton(gameWidth / 2, gameHeight / 2 + 60);
+    this.createRestartButton(gameWidth / 2, gameHeight / 2 + 80);
   }
 
   /**
@@ -154,43 +154,32 @@ export default class GameOverOverlay extends Phaser.GameObjects.Container {
   private createRestartButton(x: number, y: number): void {
     this.restartButton = this.scene.add.container(x, y);
 
-    // Button background
+    // Button background - using Title screen's selected state styling
     this.restartButtonBg = this.scene.add.graphics();
-    this.restartButtonBg.fillStyle(0x4444ff, 0.8);
-    this.restartButtonBg.fillRoundedRect(-80, -20, 160, 40, 8);
-    this.restartButtonBg.lineStyle(2, 0x6666ff, 1);
-    this.restartButtonBg.strokeRoundedRect(-80, -20, 160, 40, 8);
+    this.drawButtonBackground(this.restartButtonBg, false);
     this.restartButton.add(this.restartButtonBg);
 
-    // Button text
+    // Button text - using Orbitron font to match Title screen
     this.restartButtonText = this.scene.add.text(0, 0, "RESTART", {
-      fontSize: "18px",
+      fontSize: "24px",
       color: "#ffffff",
-      fontFamily: "Arial",
+      fontFamily: "Orbitron",
       fontStyle: "bold",
     });
     this.restartButtonText.setOrigin(0.5, 0.5);
     this.restartButton.add(this.restartButtonText);
 
-    // Make button interactive
-    this.restartButton.setSize(160, 40);
+    // Make button interactive - using Title screen dimensions
+    this.restartButton.setSize(200, 50);
     this.restartButton.setInteractive({ useHandCursor: true });
 
-    // Button hover effects
+    // Button hover effects - matching Title screen's approach
     this.restartButton.on("pointerover", () => {
-      this.restartButtonBg.clear();
-      this.restartButtonBg.fillStyle(0x5555ff, 0.9);
-      this.restartButtonBg.fillRoundedRect(-80, -20, 160, 40, 8);
-      this.restartButtonBg.lineStyle(2, 0x7777ff, 1);
-      this.restartButtonBg.strokeRoundedRect(-80, -20, 160, 40, 8);
+      this.drawButtonBackground(this.restartButtonBg, true);
     });
 
     this.restartButton.on("pointerout", () => {
-      this.restartButtonBg.clear();
-      this.restartButtonBg.fillStyle(0x4444ff, 0.8);
-      this.restartButtonBg.fillRoundedRect(-80, -20, 160, 40, 8);
-      this.restartButtonBg.lineStyle(2, 0x6666ff, 1);
-      this.restartButtonBg.strokeRoundedRect(-80, -20, 160, 40, 8);
+      this.drawButtonBackground(this.restartButtonBg, false);
     });
 
     // Button click handler
@@ -199,6 +188,29 @@ export default class GameOverOverlay extends Phaser.GameObjects.Container {
     });
 
     this.add(this.restartButton);
+  }
+
+  /**
+   * Draw button background graphics - matching Title screen styling
+   */
+  private drawButtonBackground(
+    graphics: Phaser.GameObjects.Graphics,
+    selected: boolean
+  ): void {
+    graphics.clear();
+
+    if (selected) {
+      // Deep space blue-purple with golden border for selected state
+      graphics.fillStyle(0x2a1a5a, 0.9);
+      graphics.lineStyle(3, 0xffd700, 1);
+    } else {
+      // Dark nebula blue-purple with subtle border for unselected state
+      graphics.fillStyle(0x1a0f3e, 0.8);
+      graphics.lineStyle(2, 0x4a2c7a, 1);
+    }
+
+    graphics.fillRoundedRect(-100, -25, 200, 50, 10);
+    graphics.strokeRoundedRect(-100, -25, 200, 50, 10);
   }
 
   /**

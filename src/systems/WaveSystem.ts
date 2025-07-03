@@ -14,6 +14,7 @@ export interface WaveEnemyConfig {
   amount: number; // Number of enemies of this type to spawn
   interval: number; // Time in ms between spawning each enemy of this type
   delay?: number; // Delay in ms from the start of the wave before spawning begins (default: 0)
+  energyDropRate?: number; // Rate at which enemies drop energy crystals (0.0 = never, 1.0 = always, default: 1.0)
 }
 
 export interface Wave {
@@ -74,7 +75,10 @@ export default class WaveSystem {
   private onAllWavesCompleteCallbacks: (() => void)[] = [];
 
   // External functions - will be set by the spawner
-  private spawnEnemyFunction?: (enemyType: string) => void;
+  private spawnEnemyFunction?: (
+    enemyType: string,
+    waveConfig: WaveEnemyConfig
+  ) => void;
   private getLivingEnemyCountFunction?: () => number;
 
   constructor(scene: Phaser.Scene) {
@@ -85,7 +89,9 @@ export default class WaveSystem {
   /**
    * Set the function to call when spawning enemies
    */
-  public setSpawnFunction(spawnFunction: (enemyType: string) => void): void {
+  public setSpawnFunction(
+    spawnFunction: (enemyType: string, waveConfig: WaveEnemyConfig) => void
+  ): void {
     this.spawnEnemyFunction = spawnFunction;
   }
 
@@ -306,10 +312,10 @@ export default class WaveSystem {
    */
   private spawnEnemy(enemyType: string, typeIndex: number): void {
     if (this.spawnEnemyFunction) {
-      this.spawnEnemyFunction(enemyType);
-
       const state = this.enemySpawnStates.get(typeIndex);
       if (state) {
+        this.spawnEnemyFunction(enemyType, state.config);
+
         this.notifyEnemySpawn(
           enemyType,
           typeIndex,

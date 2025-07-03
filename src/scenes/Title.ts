@@ -12,6 +12,8 @@
 import InputManager from "../components/InputManager";
 import ConfigModal from "../ui/ConfigModal";
 import ConfigSystem from "../systems/ConfigSystem";
+import GlobalMusicManager from "../utils/GlobalMusicManager";
+import GlobalSoundManager from "../utils/GlobalSoundManager";
 
 export default class Title extends Phaser.Scene {
   private inputManager!: InputManager;
@@ -29,9 +31,6 @@ export default class Title extends Phaser.Scene {
   private buttons: Phaser.GameObjects.Container[] = [];
   private buttonBackgrounds: Phaser.GameObjects.Graphics[] = [];
 
-  // Animation tweens
-  private titlePulseTween?: Phaser.Tweens.Tween;
-
   // Configuration system
   private configSystem!: ConfigSystem;
   private configModal?: ConfigModal;
@@ -47,11 +46,11 @@ export default class Title extends Phaser.Scene {
     // Initialize configuration system
     this.configSystem = new ConfigSystem();
 
+    // Start title music using global music manager
+    GlobalMusicManager.playMusicForScene(this, "Title");
+
     // Create background
     this.createBackground();
-
-    // Create title text
-    this.createTitleText();
 
     // Create buttons
     this.createButtons();
@@ -69,24 +68,10 @@ export default class Title extends Phaser.Scene {
    * Create the background
    */
   private createBackground(): void {
-    // Create a gradient-like background using rectangles
-    const bg1 = this.add.rectangle(
-      0,
-      0,
-      this.scale.width,
-      this.scale.height / 2,
-      0x1a1a2e
-    );
-    bg1.setOrigin(0, 0);
-
-    const bg2 = this.add.rectangle(
-      0,
-      this.scale.height / 2,
-      this.scale.width,
-      this.scale.height / 2,
-      0x16213e
-    );
-    bg2.setOrigin(0, 0);
+    // Create background image that covers the whole screen
+    const bg = this.add.image(0, 0, "title-bg");
+    bg.setOrigin(0, 0);
+    bg.setDisplaySize(this.scale.width, this.scale.height);
   }
 
   /**
@@ -115,7 +100,7 @@ export default class Title extends Phaser.Scene {
    */
   private createButtons(): void {
     const centerX = this.scale.width / 2;
-    const startY = this.scale.height / 2 + 40;
+    const startY = this.scale.height / 2 + 90;
     const buttonSpacing = 80;
 
     // Create START button
@@ -126,19 +111,20 @@ export default class Title extends Phaser.Scene {
     this.startButtonText = this.startButton.getAt(1) as Phaser.GameObjects.Text;
 
     // Create CONFIGURE button
-    this.configureButton = this.createButton(
-      centerX,
-      startY + buttonSpacing,
-      "CONFIGURE",
-      () => this.handleConfigure()
-    );
-    this.configureButtonBg = this.buttonBackgrounds[1];
-    this.configureButtonText = this.configureButton.getAt(
-      1
-    ) as Phaser.GameObjects.Text;
+    // this.configureButton = this.createButton(
+    //   centerX,
+    //   startY + buttonSpacing,
+    //   "CONFIGURE",
+    //   () => this.handleConfigure()
+    // );
+    // this.configureButtonBg = this.buttonBackgrounds[1];
+    // this.configureButtonText = this.configureButton.getAt(
+    //   1
+    // ) as Phaser.GameObjects.Text;
 
     // Set up button array for navigation
-    this.buttons = [this.startButton, this.configureButton];
+    // this.buttons = [this.startButton, this.configureButton];
+    this.buttons = [this.startButton];
 
     // Update button selection
     this.updateButtonSelection();
@@ -165,7 +151,8 @@ export default class Title extends Phaser.Scene {
     const buttonText = this.add.text(0, 0, text, {
       fontSize: "24px",
       color: "#ffffff",
-      fontFamily: "Arial",
+      fontFamily: "Orbitron",
+
       fontStyle: "bold",
     });
     buttonText.setOrigin(0.5, 0.5);
@@ -178,14 +165,18 @@ export default class Title extends Phaser.Scene {
     // Button hover effects
     button.on("pointerover", () => {
       const index = this.buttons.indexOf(button);
-      if (index !== -1) {
+      if (index !== -1 && index !== this.selectedButtonIndex) {
         this.selectedButtonIndex = index;
-        this.updateButtonSelection();
+        this.updateButtonSelection(true); // Play sound when hovering over different button
       }
     });
 
     // Button click handler
-    button.on("pointerdown", callback);
+    button.on("pointerdown", () => {
+      // Play menu select sound
+      GlobalSoundManager.playSound(this, "menu-select");
+      callback();
+    });
 
     return button;
   }
@@ -200,11 +191,13 @@ export default class Title extends Phaser.Scene {
     graphics.clear();
 
     if (selected) {
-      graphics.fillStyle(0x4444ff, 0.9);
-      graphics.lineStyle(3, 0x6666ff, 1);
+      // Deep space blue-purple with golden border for selected state
+      graphics.fillStyle(0x2a1a5a, 0.9);
+      graphics.lineStyle(3, 0xffd700, 1);
     } else {
-      graphics.fillStyle(0x333366, 0.8);
-      graphics.lineStyle(2, 0x555588, 1);
+      // Dark nebula blue-purple with subtle border for unselected state
+      graphics.fillStyle(0x1a0f3e, 0.8);
+      graphics.lineStyle(2, 0x4a2c7a, 1);
     }
 
     graphics.fillRoundedRect(-100, -25, 200, 50, 10);
@@ -214,10 +207,15 @@ export default class Title extends Phaser.Scene {
   /**
    * Update button selection visual state
    */
-  private updateButtonSelection(): void {
+  private updateButtonSelection(playSound: boolean = false): void {
     this.buttonBackgrounds.forEach((bg, index) => {
       this.drawButtonBackground(bg, index === this.selectedButtonIndex);
     });
+
+    // Play menu highlight sound when selection changes
+    if (playSound) {
+      GlobalSoundManager.playSound(this, "menu-highlight");
+    }
   }
 
   /**
@@ -227,7 +225,7 @@ export default class Title extends Phaser.Scene {
     this.instructionText = this.add.text(
       this.scale.width / 2,
       this.scale.height - 40,
-      "Use Arrow Keys or Gamepad to navigate • Enter/Action to select",
+      "(c) 2025 | Idea & code by m4v3k | Balancing & testing by death_unites_us",
       {
         fontSize: "14px",
         color: "#cccccc",
@@ -242,16 +240,7 @@ export default class Title extends Phaser.Scene {
    * Start title animations
    */
   private startAnimations(): void {
-    // Title pulse animation
-    this.titlePulseTween = this.tweens.add({
-      targets: this.titleText,
-      scaleX: 1.05,
-      scaleY: 1.05,
-      duration: 2000,
-      ease: "Sine.easeInOut",
-      yoyo: true,
-      repeat: -1,
-    });
+    // No animations currently
   }
 
   /**
@@ -260,10 +249,8 @@ export default class Title extends Phaser.Scene {
   private handleStartGame(): void {
     console.log("Starting game...");
 
-    // Stop animations
-    if (this.titlePulseTween) {
-      this.titlePulseTween.destroy();
-    }
+    // Stop title music immediately using global music manager
+    GlobalMusicManager.stopCurrentMusic(0);
 
     this.scene.start("Level");
   }
@@ -295,20 +282,29 @@ export default class Title extends Phaser.Scene {
 
     // Handle button navigation
     if (this.inputManager.isActionJustPressed("UP")) {
-      this.selectedButtonIndex = Math.max(0, this.selectedButtonIndex - 1);
-      this.updateButtonSelection();
+      const newIndex = Math.max(0, this.selectedButtonIndex - 1);
+      if (newIndex !== this.selectedButtonIndex) {
+        this.selectedButtonIndex = newIndex;
+        this.updateButtonSelection(true); // Play sound when selection changes
+      }
     }
 
     if (this.inputManager.isActionJustPressed("DOWN")) {
-      this.selectedButtonIndex = Math.min(
+      const newIndex = Math.min(
         this.buttons.length - 1,
         this.selectedButtonIndex + 1
       );
-      this.updateButtonSelection();
+      if (newIndex !== this.selectedButtonIndex) {
+        this.selectedButtonIndex = newIndex;
+        this.updateButtonSelection(true); // Play sound when selection changes
+      }
     }
 
     // Handle button selection
     if (this.inputManager.isActionJustPressed("ACTION")) {
+      // Play menu select sound
+      GlobalSoundManager.playSound(this, "menu-select");
+
       if (this.selectedButtonIndex === 0) {
         this.handleStartGame();
       } else if (this.selectedButtonIndex === 1) {

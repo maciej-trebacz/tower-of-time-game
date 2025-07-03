@@ -38,6 +38,7 @@ export default class Bullet extends RewindableSprite {
   private velocityY: number = 0;
   private hasHitTarget: boolean = false;
   private isDead: boolean = false; // Track dead state for rewind
+  private deathTime: number = 0; // Timestamp when bullet died
 
   // Performance optimization: use squared distance for collision detection
   private collisionRadius: number = 12; // Collision radius in pixels
@@ -315,6 +316,7 @@ export default class Bullet extends RewindableSprite {
   private markAsDead(): void {
     if (!this.isDead) {
       this.isDead = true;
+      this.deathTime = Date.now(); // Record when bullet died
       this.hasHitTarget = true;
       this.updateVisibilityBasedOnDeadState();
       console.debug("Bullet marked as dead");
@@ -326,6 +328,13 @@ export default class Bullet extends RewindableSprite {
    */
   public isDead_(): boolean {
     return this.isDead;
+  }
+
+  /**
+   * Get the time when bullet died (0 if not dead)
+   */
+  public getDeathTime(): number {
+    return this.deathTime;
   }
 
   /**

@@ -13,6 +13,7 @@ import RewindableSprite, { TimeMode } from "../components/RewindableSprite";
 import EnergyCrystal from "./EnergyCrystal";
 import { DEBUG } from "../main";
 import { EnemyTypeConfig } from "../systems/ConfigSystem";
+import { WaveEnemyConfig } from "../systems/WaveSystem";
 /* END-USER-IMPORTS */
 
 // Enemy type definitions - now imported from ConfigSystem
@@ -35,6 +36,13 @@ export const ENEMY_TYPES: Record<string, EnemyTypeConfig> = {
     speed: 70,
     maxHp: 5,
     tintColor: 0xff6666, // Red tint
+  },
+  BOSS: {
+    name: "Boss",
+    speed: 100,
+    maxHp: 200,
+    tintColor: 0xff6666,
+    boss: true,
   },
 };
 
@@ -67,15 +75,17 @@ export default class Enemy extends RewindableSprite {
     y?: number,
     texture?: string,
     frame?: number | string,
-    enemyType?: string
+    enemyType?: string,
+    waveConfig?: WaveEnemyConfig
   ) {
     super(scene, x ?? 0, y ?? 0, texture || "octonid", frame ?? 0);
 
     this.play(ANIM_ENEMY_WALK_DOWN);
 
     /* START-USER-CTR-CODE */
-    // Initialize enemy type
+    // Initialize enemy type and wave config
     this.initializeEnemyType(enemyType || "BASIC");
+    this.waveConfig = waveConfig;
     /* END-USER-CTR-CODE */
   }
 
@@ -85,6 +95,9 @@ export default class Enemy extends RewindableSprite {
   private enemyType: string = "BASIC";
   private enemyConfig: EnemyTypeConfig = ENEMY_TYPES.BASIC;
   private baseTintColor: number = 0xffffff; // Store the base tint color
+
+  // Wave configuration (for energy drop rate and other wave-specific settings)
+  private waveConfig?: WaveEnemyConfig;
 
   // Movement properties
   private targetX: number = 0;
@@ -113,6 +126,7 @@ export default class Enemy extends RewindableSprite {
 
   // Dead state properties
   public isDead: boolean = false;
+  private deathTime: number = 0; // Timestamp when enemy died
 
   // Health system
   private maxHp: number = 3; // Default health points
@@ -120,6 +134,12 @@ export default class Enemy extends RewindableSprite {
 
   // Visual effects
   private flashTween: Phaser.Tweens.Tween | null = null;
+
+  // Health bar visualization
+  private healthBarGraphics: Phaser.GameObjects.Graphics | null = null;
+  private healthBarWidth: number = 20; // Width of the health bar
+  private healthBarHeight: number = 2; // Height of the health bar
+  private healthBarOffset: number = 20; // Offset above the enemy
 
   /**
    * Initialize enemy type and apply its characteristics
@@ -153,10 +173,17 @@ export default class Enemy extends RewindableSprite {
     // Apply visual tint
     this.setTint(this.baseTintColor);
 
+    // Apply boss scaling if this is a boss enemy
+    if (this.enemyConfig.boss) {
+      this.setScale(2.0); // Make boss twice as big
+    }
+
     console.debug(
       `Enemy initialized as ${this.enemyConfig.name} type: Speed=${
         this.speed
-      }, HP=${this.maxHp}, Color=0x${this.baseTintColor.toString(16)}`
+      }, HP=${this.maxHp}, Color=0x${this.baseTintColor.toString(16)}${
+        this.enemyConfig.boss ? " (BOSS - 2x scale)" : ""
+      }`
     );
   }
 
@@ -321,6 +348,10 @@ export default class Enemy extends RewindableSprite {
   public update(time: number, delta: number): void {
     // Call parent update which handles state recording automatically
     super.update(time, delta);
+
+    // Update health bar position in both forward and rewind modes
+    // This ensures the health bar follows the enemy during rewind
+    this.updateHealthBar();
   }
 
   /**
@@ -335,6 +366,9 @@ export default class Enemy extends RewindableSprite {
 
     // Trigger damage flash effect
     this.flashDamage();
+
+    // Update health bar to reflect new HP
+    this.updateHealthBar();
 
     // Check if enemy should die
     if (this.hp <= 0) {
@@ -369,6 +403,9 @@ export default class Enemy extends RewindableSprite {
       // Ensure current HP doesn't exceed new max
       this.hp = Math.min(this.hp, this.maxHp);
     }
+
+    // Update health bar to reflect new HP values
+    this.updateHealthBar();
   }
 
   /**
@@ -380,6 +417,9 @@ export default class Enemy extends RewindableSprite {
 
     this.hp = Math.min(this.maxHp, this.hp + amount);
     console.debug(`Enemy healed ${amount} HP, HP: ${this.hp}/${this.maxHp}`);
+
+    // Update health bar to reflect new HP
+    this.updateHealthBar();
   }
 
   /**
@@ -443,6 +483,7 @@ export default class Enemy extends RewindableSprite {
   public markAsDead(): void {
     if (!this.isDead) {
       this.isDead = true;
+      this.deathTime = Date.now(); // Record when enemy died
       this.currentState = EnemyState.DEAD;
       this.updateVisibilityBasedOnDeadState();
       this.stopMovement();
@@ -458,14 +499,27 @@ export default class Enemy extends RewindableSprite {
    * Spawn an energy crystal at the enemy's death location
    */
   private spawnEnergyCrystal(): void {
-    // Create energy crystal at enemy's position
-    const energyCrystal = new EnergyCrystal(this.scene, this.x, this.y);
+    // Get energy drop rate from wave config (default to 1.0 if not specified)
+    const energyDropRate = this.waveConfig?.energyDropRate ?? 1.0;
 
-    // Add to scene and set appropriate depth
-    this.scene.add.existing(energyCrystal);
-    energyCrystal.setDepth(150); // Above buildings but below UI
+    // Use random chance to determine if crystal should drop
+    const randomValue = Math.random();
+    if (randomValue <= energyDropRate) {
+      // Create energy crystal at enemy's position
+      const energyCrystal = new EnergyCrystal(this.scene, this.x, this.y);
 
-    console.debug(`Energy crystal spawned at (${this.x}, ${this.y})`);
+      // Add to scene and set appropriate depth
+      this.scene.add.existing(energyCrystal);
+      energyCrystal.setDepth(150); // Above buildings but below UI
+
+      console.debug(
+        `Energy crystal spawned at (${this.x}, ${this.y}) with drop rate ${energyDropRate}`
+      );
+    } else {
+      console.debug(
+        `Energy crystal not spawned (drop rate: ${energyDropRate}, random: ${randomValue})`
+      );
+    }
   }
 
   /**
@@ -473,6 +527,13 @@ export default class Enemy extends RewindableSprite {
    */
   public isDead_(): boolean {
     return this.isDead;
+  }
+
+  /**
+   * Get the time when enemy died (0 if not dead)
+   */
+  public getDeathTime(): number {
+    return this.deathTime;
   }
 
   /**
@@ -492,6 +553,9 @@ export default class Enemy extends RewindableSprite {
       this.anims.stop();
       // Stop movement immediately
       this.stopMovement();
+
+      // Hide health bar when dead
+      this.updateHealthBar();
     } else {
       // Make enemy visible and resume behavior
       this.setVisible(true);
@@ -850,14 +914,14 @@ export default class Enemy extends RewindableSprite {
    */
   private getNeighbors(x: number, y: number): Point[] {
     return [
-      // { x: x - 1, y: y - 1 }, // Top-left
+      { x: x - 1, y: y - 1 }, // Top-left
       { x: x, y: y - 1 }, // Top
-      // { x: x + 1, y: y - 1 }, // Top-right
+      { x: x + 1, y: y - 1 }, // Top-right
       { x: x - 1, y: y }, // Left
       { x: x + 1, y: y }, // Right
-      // { x: x - 1, y: y + 1 }, // Bottom-left
+      { x: x - 1, y: y + 1 }, // Bottom-left
       { x: x, y: y + 1 }, // Bottom
-      // { x: x + 1, y: y + 1 }, // Bottom-right
+      { x: x + 1, y: y + 1 }, // Bottom-right
     ];
   }
 
@@ -899,7 +963,7 @@ export default class Enemy extends RewindableSprite {
    */
   private getRandomCoordinatesInTile(tileX: number, tileY: number): Point {
     const tileSize = 32; // Assuming 32x32 tiles
-    const padding = 4; // Stay away from tile edges
+    const padding = 6; // Stay away from tile edges
 
     const worldX =
       tileX * tileSize + padding + Math.random() * (tileSize - 2 * padding);
@@ -1191,6 +1255,12 @@ export default class Enemy extends RewindableSprite {
       this.pathGraphics = null;
     }
 
+    // Clean up health bar
+    if (this.healthBarGraphics) {
+      this.healthBarGraphics.destroy();
+      this.healthBarGraphics = null;
+    }
+
     super.destroy(fromScene);
   }
 
@@ -1231,6 +1301,64 @@ export default class Enemy extends RewindableSprite {
 
     // Call parent method
     super.setTimeMode(mode);
+  }
+
+  /**
+   * Create and update the health bar visualization
+   */
+  private updateHealthBar(): void {
+    // Only show health bar if enemy is alive and has less than max HP
+    const shouldShowHealthBar =
+      !this.isDead && this.visible && this.hp < this.maxHp;
+
+    if (shouldShowHealthBar) {
+      // Create health bar graphics if it doesn't exist
+      if (!this.healthBarGraphics) {
+        this.healthBarGraphics = this.scene.add.graphics();
+        this.healthBarGraphics.setDepth(300); // Above everything else
+      }
+
+      // Clear previous drawing
+      this.healthBarGraphics.clear();
+
+      // Calculate health bar position (above the enemy sprite)
+      const barX = this.x - this.healthBarWidth / 2;
+      const barY = this.y - this.healthBarOffset;
+
+      // Draw red background (for lost HP)
+      this.healthBarGraphics.fillStyle(0xff0000, 0.8); // Red background
+      this.healthBarGraphics.fillRect(
+        barX,
+        barY,
+        this.healthBarWidth,
+        this.healthBarHeight
+      );
+
+      // Draw green foreground (for current HP)
+      const healthPercent = this.hp / this.maxHp;
+      const greenBarWidth = this.healthBarWidth * healthPercent;
+      this.healthBarGraphics.fillStyle(0x00ff00, 0.9); // Green foreground
+      this.healthBarGraphics.fillRect(
+        barX,
+        barY,
+        greenBarWidth,
+        this.healthBarHeight
+      );
+
+      // Draw black border for better visibility
+      this.healthBarGraphics.lineStyle(1, 0x000000, 0.5);
+      this.healthBarGraphics.strokeRect(
+        barX,
+        barY,
+        this.healthBarWidth,
+        this.healthBarHeight
+      );
+    } else {
+      // Hide health bar if it exists
+      if (this.healthBarGraphics) {
+        this.healthBarGraphics.clear();
+      }
+    }
   }
 
   // Write your code here.

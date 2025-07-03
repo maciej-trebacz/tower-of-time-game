@@ -8,6 +8,8 @@
  * - Event-driven architecture for tutorial state changes
  */
 
+import GlobalSoundManager from "../utils/GlobalSoundManager";
+
 export enum TutorialStep {
   DISABLED = "DISABLED",
   DISABLE_MENU = "DISABLE_MENU",
@@ -101,7 +103,9 @@ export default class TutorialSystem {
     this.tutorialSteps.set(TutorialStep.SHOW_BUILD_LOCATION, {
       step: TutorialStep.SHOW_BUILD_LOCATION,
       targetTile: { x: 12, y: 3 },
-      dialogs: ["Pilot your ship to these coordinates and deploy a turret"],
+      dialogs: [
+        "Pilot your ship to these coordinates and deploy a turret [press Spacebar to build]",
+      ],
     });
 
     this.tutorialSteps.set(TutorialStep.WAIT_FOR_PLAYER_AT_TILE, {
@@ -287,13 +291,16 @@ export default class TutorialSystem {
         break;
 
       case TutorialStep.SCREEN_FLASH:
+        // Play red alert sound immediately
+        GlobalSoundManager.playSound(this.scene, "red-alert");
+
         this.scene.time.delayedCall(200, () => {
           if (stepData.flashCount) {
             this.notifyScreenFlash(0xff0000, stepData.flashCount); // Red flash
           }
         });
-        // Auto-advance after flash
-        this.scene.time.delayedCall(2400, () => {
+        // Auto-advance after 3 seconds to match the red-alert sound duration
+        this.scene.time.delayedCall(3000, () => {
           this.advanceToStep(TutorialStep.ENEMY_WARNING);
         });
         break;

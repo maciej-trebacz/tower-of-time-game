@@ -1,6 +1,7 @@
 import InputManager from "../components/InputManager";
 import StatusBar from "../ui/StatusBar";
 import ConfigSystem, { TowerConfig } from "../systems/ConfigSystem";
+import GlobalSoundManager from "../utils/GlobalSoundManager";
 
 export interface MenuItemData {
   id: string;
@@ -210,6 +211,7 @@ export default class PlayerMenu extends Phaser.GameObjects.Container {
         this.goBackToPreviousMenu();
       } else {
         // Close menu completely
+        GlobalSoundManager.playSound(this.scene, "menu-select");
         this.hide();
       }
       return;
@@ -236,6 +238,8 @@ export default class PlayerMenu extends Phaser.GameObjects.Container {
     // Update selector if selection changed
     if (prevIndex !== this.selectedIndex) {
       this.updateSelector();
+      // Play menu highlight sound when selection changes
+      GlobalSoundManager.playSound(this.scene, "menu-highlight");
     }
 
     // Handle item selection with ACTION
@@ -249,6 +253,9 @@ export default class PlayerMenu extends Phaser.GameObjects.Container {
   private selectCurrentItem(): void {
     if (this.selectedIndex < this.menuItemsData.length) {
       const selectedItem = this.menuItemsData[this.selectedIndex];
+
+      // Play menu select sound
+      GlobalSoundManager.playSound(this.scene, "menu-select");
 
       if (selectedItem.submenu && selectedItem.submenu.length > 0) {
         // Open submenu
@@ -283,6 +290,9 @@ export default class PlayerMenu extends Phaser.GameObjects.Container {
    */
   private goBackToPreviousMenu(): void {
     if (this.currentMenuStack.length > 1) {
+      // Play menu select sound for going back
+      GlobalSoundManager.playSound(this.scene, "menu-select");
+
       // Remove current menu from stack
       this.currentMenuStack.pop();
 
@@ -342,7 +352,7 @@ export default class PlayerMenu extends Phaser.GameObjects.Container {
 
     // Handle different menu item types
     if (selectedItem.id === "build") {
-      this.statusBar.showMenuOption("Build", "Select a tower type to build");
+      this.statusBar.showMenuOption("Build", "Select a turret type to build");
     } else if (selectedItem.id === "sell") {
       this.statusBar.showMenuOption(
         "Sell",

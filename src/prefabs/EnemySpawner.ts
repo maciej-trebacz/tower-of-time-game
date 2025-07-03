@@ -5,7 +5,7 @@
 /* START-USER-IMPORTS */
 import Enemy, { ENEMY_TYPES } from "./Enemy";
 import Goal from "./Goal";
-import WaveSystem, { Wave } from "../systems/WaveSystem";
+import WaveSystem, { Wave, WaveEnemyConfig } from "../systems/WaveSystem";
 /* END-USER-IMPORTS */
 
 export default class EnemySpawner extends Phaser.GameObjects.Rectangle {
@@ -52,9 +52,11 @@ export default class EnemySpawner extends Phaser.GameObjects.Rectangle {
 
     // Initialize wave system
     this.waveSystem = new WaveSystem(this.scene);
-    this.waveSystem.setSpawnFunction((enemyType: string) => {
-      this.spawnSpecificType(enemyType);
-    });
+    this.waveSystem.setSpawnFunction(
+      (enemyType: string, waveConfig: WaveEnemyConfig) => {
+        this.spawnSpecificType(enemyType, waveConfig);
+      }
+    );
 
     // Set function to get living enemy count
     this.waveSystem.setLivingEnemyCountFunction(() => {
@@ -152,8 +154,12 @@ export default class EnemySpawner extends Phaser.GameObjects.Rectangle {
   /**
    * Spawn a specific enemy type at a random position within the spawner bounds
    * @param enemyType The type of enemy to spawn (e.g., "BASIC", "FAST", "TANK")
+   * @param waveConfig The wave configuration for this enemy
    */
-  public spawnSpecificType(enemyType: string): Enemy | null {
+  public spawnSpecificType(
+    enemyType: string,
+    waveConfig?: WaveEnemyConfig
+  ): Enemy | null {
     if (!this.goal || !this.pathLayer || !this.buildingLayer) {
       console.warn(
         "EnemySpawner not properly initialized - missing goal, pathLayer, or buildingLayer"
@@ -182,7 +188,8 @@ export default class EnemySpawner extends Phaser.GameObjects.Rectangle {
       randomY,
       "octonid",
       0,
-      enemyType
+      enemyType,
+      waveConfig
     );
 
     // Add enemy to the scene and building layer
@@ -190,7 +197,7 @@ export default class EnemySpawner extends Phaser.GameObjects.Rectangle {
     this.buildingLayer.add(enemy);
 
     // Set enemy depth to match other enemies
-    enemy.setDepth(100); // Building layer depth
+    enemy.setDepth(50); // Building layer depth
 
     // Configure rewind recording interval
     if (this.rewindRecordingInterval) {

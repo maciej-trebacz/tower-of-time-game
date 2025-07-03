@@ -26,6 +26,7 @@ import ConfigSystem from "../systems/ConfigSystem";
 import StatusBar from "../ui/StatusBar";
 import TutorialSystem, { TutorialStep } from "../systems/TutorialSystem";
 import DialogBox from "../ui/DialogBox";
+import GlobalMusicManager from "../utils/GlobalMusicManager";
 /* END-USER-IMPORTS */
 
 export default class Level extends Phaser.Scene {
@@ -86,15 +87,15 @@ export default class Level extends Phaser.Scene {
               opacity: 1,
               data: [
                 19, 19, 19, 19, 19, 25, 19, 19, 19, 19, 19, 19, 19, 19, 19, 20,
-                57, 58, 59, 65, 42, 43, 42, 43, 42, 28, 54, 43, 42, 43, 42, 43,
+                57, 58, 59, 65, 42, 43, 42, 43, 44, 28, 54, 44, 42, 43, 42, 43,
                 42, 43, 42, 28, 65, 73, 67, 57, 22, 22, 22, 22, 23, 26, 21, 22,
-                22, 22, 22, 22, 22, 22, 23, 28, 58, 58, 73, 65, 46, 46, 40, 27,
-                31, 26, 29, 27, 38, 18, 19, 19, 53, 39, 31, 28, 67, 73, 73, 58,
+                22, 22, 22, 22, 22, 22, 23, 28, 58, 58, 73, 65, 46, 46, 40, 30,
+                31, 26, 29, 30, 38, 18, 19, 19, 53, 39, 31, 28, 67, 73, 73, 58,
                 19, 20, 39, 27, 31, 26, 29, 27, 31, 26, 54, 42, 42, 37, 31, 28,
                 57, 58, 65, 66, 60, 28, 29, 27, 31, 49, 29, 27, 31, 28, 21, 22,
                 22, 45, 31, 26, 58, 66, 58, 13, 57, 28, 29, 27, 31, 43, 37, 27,
-                31, 26, 29, 18, 25, 19, 19, 33, 19, 19, 19, 20, 73, 28, 29, 27,
-                56, 22, 45, 27, 31, 26, 29, 26, 26, 54, 42, 42, 42, 42, 43, 28,
+                31, 26, 29, 18, 25, 19, 19, 33, 19, 19, 19, 20, 73, 28, 29, 30,
+                56, 22, 45, 30, 31, 26, 29, 26, 26, 54, 44, 42, 42, 42, 43, 28,
                 65, 28, 48, 46, 46, 46, 46, 46, 64, 26, 29, 26, 26, 21, 22, 22,
                 22, 22, 23, 28, 73, 34, 19, 19, 19, 19, 19, 19, 19, 51, 29, 26,
                 26, 29, 38, 18, 20, 39, 31, 28, 66, 60, 61, 60, 60, 61, 60, 61,
@@ -114,12 +115,12 @@ export default class Level extends Phaser.Scene {
               data: [
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 27, 27,
-                27, 27, 0, 0, 0, 27, 27, 27, 27, 27, 27, 27, 27, 0, 0, 0, 0, 0,
-                27, 27, 27, 27, 0, 0, 0, 27, 0, 0, 0, 0, 0, 27, 27, 0, 0, 0, 0,
-                0, 0, 0, 0, 27, 0, 0, 0, 27, 0, 0, 0, 0, 0, 27, 27, 0, 0, 0, 0,
-                0, 0, 0, 0, 27, 0, 0, 0, 27, 0, 0, 27, 27, 27, 27, 27, 0, 0, 0,
-                0, 0, 0, 0, 0, 27, 0, 0, 0, 27, 0, 0, 27, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 27, 27, 27, 27, 27, 0, 0, 27, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 27, 27, 27, 27, 27, 27, 27, 27, 0, 0, 0, 0, 0,
+                27, 27, 27, 0, 0, 0, 0, 27, 0, 0, 0, 0, 0, 27, 27, 0, 0, 0, 0,
+                0, 0, 0, 27, 0, 0, 0, 0, 27, 0, 0, 0, 0, 0, 27, 27, 0, 0, 0, 0,
+                0, 0, 0, 27, 0, 0, 0, 0, 27, 0, 0, 27, 27, 27, 27, 27, 0, 0, 0,
+                0, 0, 0, 0, 27, 0, 0, 0, 0, 27, 0, 0, 27, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 27, 27, 27, 27, 27, 27, 0, 0, 27, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 27, 0, 0, 27, 27, 27, 27,
                 27, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 27, 0, 0, 27, 27, 0, 0,
                 27, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 27, 0, 0, 27, 27, 0, 0,
@@ -127,6 +128,30 @@ export default class Level extends Phaser.Scene {
                 27, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 27, 27, 27, 27, 27, 0,
                 0, 27, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0,
+              ],
+            },
+            {
+              type: "tilelayer",
+              name: "walls",
+              width: 20,
+              height: 14,
+              opacity: 1,
+              data: [
+                19, 19, 19, 19, 19, 25, 19, 19, 19, 19, 19, 19, 19, 19, 19, 20,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 28, 0, 0, 0, 0, 0, 0, 0, 0, 0, 28, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 26, 0, 0, 0, 0, 0, 0, 0, 0, 0, 28, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 28, 0, 0, 0, 18, 19, 19, 53, 0, 0, 28, 0,
+                0, 0, 0, 19, 20, 0, 0, 0, 28, 0, 0, 0, 28, 0, 0, 0, 0, 0, 28, 0,
+                0, 0, 0, 0, 28, 0, 0, 0, 49, 0, 0, 0, 26, 0, 0, 0, 0, 0, 26, 0,
+                0, 0, 0, 0, 28, 0, 0, 0, 0, 0, 0, 0, 28, 0, 18, 25, 19, 19, 33,
+                19, 19, 19, 20, 0, 28, 0, 0, 0, 0, 0, 0, 0, 28, 0, 28, 26, 0, 0,
+                0, 0, 0, 0, 28, 0, 28, 0, 0, 0, 0, 0, 0, 0, 28, 0, 28, 28, 0, 0,
+                0, 0, 0, 0, 26, 0, 34, 19, 19, 19, 19, 19, 19, 19, 51, 0, 26,
+                28, 0, 0, 18, 20, 0, 0, 28, 0, 0, 0, 0, 0, 0, 0, 0, 0, 28, 0,
+                34, 36, 0, 0, 26, 28, 0, 0, 28, 0, 0, 0, 0, 0, 0, 0, 0, 0, 26,
+                0, 0, 0, 0, 0, 28, 26, 0, 0, 26, 0, 0, 0, 0, 0, 0, 0, 0, 0, 28,
+                0, 0, 0, 0, 0, 26, 28, 0, 0, 28, 0, 0, 0, 0, 0, 0, 0, 0, 0, 34,
+                19, 19, 19, 19, 19, 33, 33, 35, 35, 36,
               ],
             },
           ],
@@ -145,6 +170,9 @@ export default class Level extends Phaser.Scene {
     // path
     const path = editabletilemap.createLayer("path", ["tiles"], 0, 0)!;
     path.blendMode = Phaser.BlendModes.SCREEN;
+
+    // walls
+    editabletilemap.createLayer("walls", ["tiles"], 0, 0);
 
     // player
     const player = new Player(this, 241, 252);
@@ -191,7 +219,7 @@ export default class Level extends Phaser.Scene {
   private tutorialSystem!: TutorialSystem;
   private dialogBox!: DialogBox;
   private isTutorialMode: boolean = true; // Start in tutorial mode by default
-  private tutorialTileHighlight!: Phaser.GameObjects.Graphics;
+  private tutorialTileHighlight!: Phaser.GameObjects.Sprite;
 
   // Display layers for proper rendering order (bottom to top):
   // groundLayer: Background elements, terrain decorations
@@ -205,6 +233,7 @@ export default class Level extends Phaser.Scene {
 
   // Depth constants for proper layering
   private static readonly DEPTH_GROUND = 0;
+  private static readonly DEPTH_WALLS = 75;
   private static readonly DEPTH_BUILDINGS = 100;
   private static readonly DEPTH_EFFECTS = 200;
   private static readonly DEPTH_UI = 300;
@@ -222,6 +251,9 @@ export default class Level extends Phaser.Scene {
 
     // Initialize configuration system
     this.configSystem = new ConfigSystem();
+
+    // Start level music using global music manager
+    GlobalMusicManager.playMusicForScene(this, "Level");
 
     // Create Tutorial System early (before enemy spawner initialization)
     this.tutorialSystem = new TutorialSystem(this);
@@ -293,6 +325,12 @@ export default class Level extends Phaser.Scene {
     // Initialize enemy spawner if both goal and spawner exist
     if (goalObject && spawnerObject) {
       const pathLayer = this.editabletilemap.getLayer("path");
+      const wallsLayer = this.editabletilemap.getLayer("walls");
+
+      if (wallsLayer) {
+        wallsLayer.tilemapLayer.setDepth(Level.DEPTH_WALLS);
+      }
+
       if (pathLayer) {
         spawnerObject.initialize(
           goalObject,
@@ -345,13 +383,29 @@ export default class Level extends Phaser.Scene {
       this.energySystem.setTutorialRegenerationDisabled(true);
     }
 
-    // Create energy bar UI
-    const energyBarX = 10; // Left side of screen with padding
-    const energyBarY = 10; // Top of screen with padding
+    // Create energy bar UI with label (bottom left, stacked vertically)
+    const baseX = 10;
+    const baseY = 400;
+    const labelOffset = 50; // Space for label text
+    const barSpacing = 23; // Vertical spacing between bars
+
+    // Energy label
+    const energyLabel = this.add.text(baseX, baseY, "Energy", {
+      fontSize: "10px",
+      color: "#ffffff",
+      fontFamily: "Arial",
+      stroke: "#000000",
+      strokeThickness: 1,
+    });
+    energyLabel.setDepth(EnergyBar.ENERGY_BAR_DEPTH);
+    energyLabel.setScrollFactor(0);
+    this.uiLayer.add(energyLabel);
+
+    // Energy bar
     this.energyBar = new EnergyBar(
       this,
-      energyBarX,
-      energyBarY,
+      baseX + labelOffset,
+      baseY - 2,
       this.energySystem
     );
     this.add.existing(this.energyBar);
@@ -364,13 +418,23 @@ export default class Level extends Phaser.Scene {
       initialHP: goalConfig.initialHP,
     });
 
-    // Create Goal HP bar UI (on the right side of screen)
-    const goalHPBarX = this.scale.width - 130; // Right side with padding
-    const goalHPBarY = 10; // Top of screen with padding
+    // Goal HP label
+    const goalHPLabel = this.add.text(baseX, baseY + barSpacing, "Goal HP", {
+      fontSize: "10px",
+      color: "#ffffff",
+      fontFamily: "Arial",
+      stroke: "#000000",
+      strokeThickness: 1,
+    });
+    goalHPLabel.setDepth(GoalHPBar.GOAL_HP_BAR_DEPTH);
+    goalHPLabel.setScrollFactor(0);
+    this.uiLayer.add(goalHPLabel);
+
+    // Goal HP bar
     this.goalHPBar = new GoalHPBar(
       this,
-      goalHPBarX,
-      goalHPBarY,
+      baseX + labelOffset,
+      baseY + barSpacing - 2,
       this.goalHPSystem
     );
     this.add.existing(this.goalHPBar);
@@ -400,9 +464,7 @@ export default class Level extends Phaser.Scene {
     this.uiLayer.add(this.dialogBox);
 
     // Create tutorial-specific tile highlight
-    this.tutorialTileHighlight = this.add.graphics();
-    this.tutorialTileHighlight.fillStyle(0xffffff, 0.8);
-    this.tutorialTileHighlight.fillRect(0, 0, 32, 32);
+    this.tutorialTileHighlight = this.add.sprite(0, 0, "tile-highlight");
     this.tutorialTileHighlight.setVisible(false);
     this.tutorialTileHighlight.setDepth(Level.DEPTH_EFFECTS + 10); // Above normal tile highlight
     this.effectLayer.add(this.tutorialTileHighlight);
@@ -518,12 +580,27 @@ export default class Level extends Phaser.Scene {
     this.tutorialSystem.onTileHighlight(
       (x: number, y: number, show: boolean) => {
         if (show) {
-          const worldX = x * 32;
-          const worldY = y * 32;
+          // Center the 36x36 sprite on the 32x32 tile
+          const worldX = x * 32 + 16; // Tile center X
+          const worldY = y * 32 + 16; // Tile center Y
           this.tutorialTileHighlight.setPosition(worldX, worldY);
           this.tutorialTileHighlight.setVisible(true);
+
+          // Start pulsing effect
+          this.tweens.add({
+            targets: this.tutorialTileHighlight,
+            scaleX: 1.2,
+            scaleY: 1.2,
+            duration: 800,
+            ease: "Sine.easeInOut",
+            yoyo: true,
+            repeat: -1,
+          });
         } else {
           this.tutorialTileHighlight.setVisible(false);
+          // Stop pulsing effect
+          this.tweens.killTweensOf(this.tutorialTileHighlight);
+          this.tutorialTileHighlight.setScale(1, 1);
         }
       }
     );
@@ -694,19 +771,19 @@ export default class Level extends Phaser.Scene {
       flashOverlay.setDepth(2000); // Above everything
       this.uiLayer.add(flashOverlay);
 
-      // Flash animation
+      // Flash animation - adjusted timing to fit 3-second red-alert sound
       this.tweens.add({
         targets: flashOverlay,
         alpha: 0,
-        duration: 600,
+        duration: 500,
         ease: "Power2",
         onComplete: () => {
           flashOverlay.destroy();
           flashesRemaining--;
 
           if (flashesRemaining > 0) {
-            // Wait a bit before next flash
-            this.time.delayedCall(100, flash);
+            // Wait longer between flashes to spread them over 3 seconds
+            this.time.delayedCall(400, flash);
           }
         },
       });
@@ -749,7 +826,7 @@ export default class Level extends Phaser.Scene {
     this.rewindIndicator = this.add.graphics();
 
     // Set position in bottom right corner (with some padding)
-    const padding = 20;
+    const padding = 5;
     const cameraWidth = this.cameras.main.width;
     const cameraHeight = this.cameras.main.height;
     this.rewindIndicator.setPosition(
@@ -815,11 +892,11 @@ export default class Level extends Phaser.Scene {
         tileX,
         tileY,
         false,
-        "path"
+        "walls"
       );
 
-      // Only show highlight if there's NO path tile at this position (tile is null or has index 0)
-      const shouldShowHighlight = !pathTile || pathTile.index === 0;
+      // Only show highlight for tiles on the walls layer
+      const shouldShowHighlight = !!pathTile;
 
       if (shouldShowHighlight) {
         // Position the highlight on the tile
@@ -919,6 +996,83 @@ export default class Level extends Phaser.Scene {
         bullet.update(time, delta);
       }
     });
+
+    // Clean up dead enemies and bullets periodically
+    this.cleanupDeadObjects();
+  }
+
+  /**
+   * Clean up dead enemies and bullets that have been invisible for a while
+   * This prevents memory leaks and improves performance
+   */
+  private cleanupDeadObjects(): void {
+    // Don't clean up during rewind mode to avoid interfering with rewind system
+    const isRewindPressed = this.inputManager.isActionPressed("REWIND");
+    if (isRewindPressed) {
+      return;
+    }
+
+    const currentTime = Date.now();
+    const CLEANUP_DELAY = 5000; // 5 seconds after death before cleanup
+
+    // Clean up dead enemies
+    const enemies = this.getAllEnemies();
+    const enemiesToCleanup: Enemy[] = [];
+
+    enemies.forEach((enemy) => {
+      if (this.shouldCleanupDeadObject(enemy, currentTime, CLEANUP_DELAY)) {
+        enemiesToCleanup.push(enemy);
+      }
+    });
+
+    // Clean up dead bullets
+    const bullets = this.getAllBullets();
+    const bulletsToCleanup: Bullet[] = [];
+
+    bullets.forEach((bullet) => {
+      if (this.shouldCleanupDeadObject(bullet, currentTime, CLEANUP_DELAY)) {
+        bulletsToCleanup.push(bullet);
+      }
+    });
+
+    // Perform cleanup outside of iteration to avoid modifying collection during iteration
+    enemiesToCleanup.forEach((enemy) => {
+      console.debug("Cleaning up dead enemy");
+      enemy.destroy();
+    });
+
+    bulletsToCleanup.forEach((bullet) => {
+      console.debug("Cleaning up dead bullet");
+      bullet.destroy();
+    });
+
+    // Log cleanup stats if any objects were cleaned up
+    if (enemiesToCleanup.length > 0 || bulletsToCleanup.length > 0) {
+      console.debug(
+        `Cleaned up ${enemiesToCleanup.length} enemies and ${bulletsToCleanup.length} bullets`
+      );
+    }
+  }
+
+  /**
+   * Check if a dead object should be cleaned up
+   * Uses death time tracking to determine if enough time has passed
+   */
+  private shouldCleanupDeadObject(
+    obj: Enemy | Bullet,
+    currentTime: number,
+    delay: number
+  ): boolean {
+    // Get the death time from the object
+    const deathTime = obj.getDeathTime();
+
+    // If no death time recorded, don't clean up yet
+    if (deathTime === 0) {
+      return false;
+    }
+
+    // Check if enough time has passed since death
+    return currentTime - deathTime >= delay;
   }
 
   /**
@@ -978,6 +1132,10 @@ export default class Level extends Phaser.Scene {
 
       // Show rewind indicator
       this.rewindIndicator.setVisible(true);
+
+      // Switch to rewind music track
+      GlobalMusicManager.switchToRewindTrack("Level");
+
       console.log("Rewind mode activated for all enemies, bullets, and towers");
     }
 
@@ -1014,6 +1172,10 @@ export default class Level extends Phaser.Scene {
 
       // Hide rewind indicator
       this.rewindIndicator.setVisible(false);
+
+      // Switch back to normal music track
+      GlobalMusicManager.switchToNormalTrack("Level");
+
       console.log("Forward mode restored for all enemies, bullets, and towers");
     }
 
@@ -1442,6 +1604,27 @@ export default class Level extends Phaser.Scene {
     console.log(`- Effects: ${Level.DEPTH_EFFECTS}`);
     console.log(`- UI/Player: ${Level.DEPTH_UI}`);
     console.log(`- Menu: 1000 (highest)`);
+  }
+
+  /**
+   * Debug method to check object counts in the scene
+   */
+  public debugObjectCounts(): void {
+    const enemies = this.getAllEnemies();
+    const bullets = this.getAllBullets();
+    const livingEnemies = enemies.filter((e) => !e.isDead_());
+    const deadEnemies = enemies.filter((e) => e.isDead_());
+    const livingBullets = bullets.filter((b) => !b.isDead_());
+    const deadBullets = bullets.filter((b) => b.isDead_());
+
+    console.log("=== OBJECT COUNT DEBUG ===");
+    console.log(
+      `Total enemies: ${enemies.length} (living: ${livingEnemies.length}, dead: ${deadEnemies.length})`
+    );
+    console.log(
+      `Total bullets: ${bullets.length} (living: ${livingBullets.length}, dead: ${deadBullets.length})`
+    );
+    console.log(`Total scene children: ${this.children.getAll().length}`);
   }
 
   /**
@@ -2086,6 +2269,13 @@ export default class Level extends Phaser.Scene {
         shouldPause ? "paused" : "resumed"
       }. Check with testTowerDefense() to see status.`
     );
+  }
+
+  /**
+   * Clean up when scene is shut down
+   */
+  shutdown() {
+    // No need to destroy music system - it's managed globally
   }
 
   /* END-USER-CODE */

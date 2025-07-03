@@ -3,6 +3,7 @@
 /* START-USER-IMPORTS */
 import Enemy from "./Enemy";
 import Tower from "./Tower";
+import GlobalSoundManager from "../utils/GlobalSoundManager";
 /* END-USER-IMPORTS */
 
 export default class SplashTower extends Tower {
@@ -59,6 +60,9 @@ export default class SplashTower extends Tower {
    * @param target Primary target enemy
    */
   private fireBlast(target: Enemy): void {
+    // Play blast sound
+    GlobalSoundManager.playSound(this.scene, "blast");
+
     // Calculate blast center position (tower's center)
     const blastX = this.x + this.width / 2;
     const blastY = this.y + this.height / 2;

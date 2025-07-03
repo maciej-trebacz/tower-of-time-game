@@ -7,6 +7,13 @@
                 "key": "animations"
             },
             {
+                "url": [
+                    "assets/blast.wav"
+                ],
+                "type": "audio",
+                "key": "blast"
+            },
+            {
                 "url": "assets/bullet.png",
                 "type": "image",
                 "key": "bullet"
@@ -17,9 +24,63 @@
                 "key": "energy-crystal"
             },
             {
+                "url": [
+                    "assets/explosion.wav"
+                ],
+                "type": "audio",
+                "key": "explosion"
+            },
+            {
+                "url": [
+                    "assets/explosion.wav"
+                ],
+                "type": "audio",
+                "key": "explosion"
+            },
+            {
                 "url": "assets/FufuSuperDino.png",
                 "type": "image",
                 "key": "FufuSuperDino"
+            },
+            {
+                "url": [
+                    "assets/menu-highlight.wav"
+                ],
+                "type": "audio",
+                "key": "menu-highlight"
+            },
+            {
+                "url": [
+                    "assets/menu-select.wav"
+                ],
+                "type": "audio",
+                "key": "menu-select"
+            },
+            {
+                "url": "assets/message-box.png",
+                "type": "image",
+                "key": "message-box"
+            },
+            {
+                "url": [
+                    "assets/music-game.ogg"
+                ],
+                "type": "audio",
+                "key": "music-game"
+            },
+            {
+                "url": [
+                    "assets/music-game-reverse.ogg"
+                ],
+                "type": "audio",
+                "key": "music-game-reverse"
+            },
+            {
+                "url": [
+                    "assets/music-menu.ogg"
+                ],
+                "type": "audio",
+                "key": "music-menu"
             },
             {
                 "url": "assets/octonid.png",
@@ -33,6 +94,13 @@
                 },
                 "type": "spritesheet",
                 "key": "octonid"
+            },
+            {
+                "url": "assets/Orbitron.ttf",
+                "format": "truetype",
+                "descriptors": {},
+                "type": "font",
+                "key": "Orbitron"
             },
             {
                 "url": "assets/player.png",
@@ -58,9 +126,35 @@
                 "key": "purple-gem"
             },
             {
+                "url": [
+                    "assets/red-alert.wav"
+                ],
+                "type": "audio",
+                "key": "red-alert"
+            },
+            {
                 "url": "assets/sell.png",
                 "type": "image",
                 "key": "sell"
+            },
+            {
+                "url": [
+                    "assets/shoot.wav"
+                ],
+                "type": "audio",
+                "key": "shoot"
+            },
+            {
+                "url": [
+                    "assets/slow.wav"
+                ],
+                "type": "audio",
+                "key": "slow"
+            },
+            {
+                "url": "assets/tile-highlight.png",
+                "type": "image",
+                "key": "tile-highlight"
             },
             {
                 "url": "assets/tiles.png",
@@ -71,6 +165,11 @@
                 "url": "assets/tiles_ground.png",
                 "type": "image",
                 "key": "tiles_ground"
+            },
+            {
+                "url": "assets/title.png",
+                "type": "image",
+                "key": "title-bg"
             },
             {
                 "url": "assets/tower.png",

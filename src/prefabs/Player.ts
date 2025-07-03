@@ -26,19 +26,53 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
     /* START-USER-CTR-CODE */
     this.initializeInput();
-    this.speed = 200; // pixels per second
+    this.maxSpeed = 200; // Maximum speed in pixels per second
+    this.acceleration = 2000; // Acceleration rate in pixels per second squared
+    this.friction = 2000; // Deceleration rate when no input in pixels per second squared
+    this.velocity = { x: 0, y: 0 }; // Current velocity
+    this.createShadowEffect();
     /* END-USER-CTR-CODE */
   }
 
   /* START-USER-CODE */
 
-  private speed: number;
+  private maxSpeed: number;
+  private acceleration: number;
+  private friction: number;
+  private velocity: { x: number; y: number };
   private playerMenu?: PlayerMenu;
   private inputManager!: InputManager;
+  private shadowEffect?: Phaser.GameObjects.Graphics;
 
   private initializeInput(): void {
     // Initialize input manager
     this.inputManager = new InputManager(this.scene);
+  }
+
+  /**
+   * Create drop shadow effect
+   */
+  private createShadowEffect(): void {
+    this.shadowEffect = this.scene.add.graphics();
+    this.shadowEffect.x = this.x;
+    this.shadowEffect.y = this.y;
+
+    // Create a dark shadow ellipse below the player
+    this.shadowEffect.fillStyle(0x000000, 0.25); // Subtle shadow
+    this.shadowEffect.fillEllipse(0, 30, 24, 10); // Shadow positioned below player
+
+    // Set depth to be behind the player
+    this.shadowEffect.setDepth(9);
+  }
+
+  /**
+   * Update shadow position to follow the player
+   */
+  private updateShadowPosition(): void {
+    if (this.shadowEffect) {
+      this.shadowEffect.x = this.x;
+      this.shadowEffect.y = this.y;
+    }
   }
 
   private getInputVector(): { x: number; y: number } {
@@ -81,7 +115,12 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       if (!wasMenuVisible) {
         const actionPressed = this.inputManager.isActionJustPressed("ACTION");
         if (actionPressed) {
-          this.playerMenu.show(this.x, this.y);
+          // Check if player can build at current position before showing menu
+          if (this.canBuildAtCurrentPosition()) {
+            this.playerMenu.show(this.x, this.y);
+          } else {
+            console.log("Cannot open menu - cannot build at this location!");
+          }
         }
       }
     }
@@ -89,25 +128,77 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     // Only allow movement if menu is not visible
     if (!this.playerMenu || !this.playerMenu.isMenuVisible()) {
       const input = this.getInputVector();
+      const deltaSeconds = delta / 1000;
 
-      // Calculate movement
-      const moveX = input.x * this.speed * (delta / 1000);
-      const moveY = input.y * this.speed * (delta / 1000);
+      // Apply acceleration based on input
+      if (input.x !== 0 || input.y !== 0) {
+        // Normalize input vector to ensure consistent acceleration in all directions
+        const inputMagnitude = Math.sqrt(input.x * input.x + input.y * input.y);
+        const normalizedX = input.x / inputMagnitude;
+        const normalizedY = input.y / inputMagnitude;
 
-      // Calculate new position
+        // Instantly rotate sprite to face input direction
+        const angle = Math.atan2(input.y, input.x);
+        this.setRotation(angle + Math.PI / 2);
+
+        // Apply acceleration in the input direction
+        this.velocity.x += normalizedX * this.acceleration * deltaSeconds;
+        this.velocity.y += normalizedY * this.acceleration * deltaSeconds;
+
+        // Clamp velocity to max speed
+        const currentSpeed = Math.sqrt(
+          this.velocity.x * this.velocity.x + this.velocity.y * this.velocity.y
+        );
+        if (currentSpeed > this.maxSpeed) {
+          const scale = this.maxSpeed / currentSpeed;
+          this.velocity.x *= scale;
+          this.velocity.y *= scale;
+        }
+      } else {
+        // Apply friction when no input
+        const currentSpeed = Math.sqrt(
+          this.velocity.x * this.velocity.x + this.velocity.y * this.velocity.y
+        );
+
+        if (currentSpeed > 0) {
+          // Calculate friction deceleration
+          const frictionDecel = this.friction * deltaSeconds;
+
+          if (frictionDecel >= currentSpeed) {
+            // Stop completely if friction would overshoot
+            this.velocity.x = 0;
+            this.velocity.y = 0;
+          } else {
+            // Apply friction in the opposite direction of velocity
+            const frictionScale = 1 - frictionDecel / currentSpeed;
+            this.velocity.x *= frictionScale;
+            this.velocity.y *= frictionScale;
+          }
+        }
+      }
+
+      // Calculate new position based on velocity
+      const moveX = this.velocity.x * deltaSeconds;
+      const moveY = this.velocity.y * deltaSeconds;
       const newX = this.x + moveX;
       const newY = this.y + moveY;
 
       // Check boundaries and apply movement
       const boundedPosition = this.checkBoundaries(newX, newY);
-      this.setPosition(boundedPosition.x, boundedPosition.y);
 
-      // Rotate sprite to face movement direction
-      if (input.x !== 0 || input.y !== 0) {
-        const angle = Math.atan2(input.y, input.x);
-        this.setRotation(angle + Math.PI / 2);
+      // If we hit a boundary, zero out the velocity in that direction
+      if (boundedPosition.x !== newX) {
+        this.velocity.x = 0;
       }
+      if (boundedPosition.y !== newY) {
+        this.velocity.y = 0;
+      }
+
+      this.setPosition(boundedPosition.x, boundedPosition.y);
     }
+
+    // Update shadow position to follow the player
+    this.updateShadowPosition();
   }
 
   // Method to check if interact button is pressed (for future use)
@@ -117,12 +208,25 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
   // Getter for movement speed (for external access)
   public getSpeed(): number {
-    return this.speed;
+    return this.maxSpeed;
   }
 
   // Setter for movement speed (for external modification)
   public setSpeed(speed: number): void {
-    this.speed = speed;
+    this.maxSpeed = speed;
+  }
+
+  // New methods for physics properties
+  public setMovementAcceleration(acceleration: number): void {
+    this.acceleration = acceleration;
+  }
+
+  public setMovementFriction(friction: number): void {
+    this.friction = friction;
+  }
+
+  public getVelocity(): { x: number; y: number } {
+    return { ...this.velocity };
   }
 
   // Menu management methods
@@ -170,6 +274,40 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
   public getMenu(): PlayerMenu | undefined {
     return this.playerMenu;
+  }
+
+  /**
+   * Check if the player can build at their current position
+   * This method accesses the Level scene to check building constraints
+   */
+  private canBuildAtCurrentPosition(): boolean {
+    // Cast scene to Level to access canBuildAtPlayerPosition method
+    const levelScene = this.scene as any;
+
+    // Check if the scene has the canBuildAtPlayerPosition method (Level scene)
+    if (
+      levelScene &&
+      typeof levelScene.canBuildAtPlayerPosition === "function"
+    ) {
+      return levelScene.canBuildAtPlayerPosition();
+    }
+
+    // If not in Level scene or method doesn't exist, allow menu to open
+    console.warn(
+      "Cannot check build position - not in Level scene or method missing"
+    );
+    return true;
+  }
+
+  /**
+   * Cleanup when player is destroyed
+   */
+  public destroy(fromScene?: boolean): void {
+    if (this.shadowEffect) {
+      this.shadowEffect.destroy();
+    }
+
+    super.destroy(fromScene);
   }
 
   /* END-USER-CODE */

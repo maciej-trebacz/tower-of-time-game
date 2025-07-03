@@ -27,7 +27,7 @@ export default class InputManager {
     },
     REWIND: {
       keyboard: [Phaser.Input.Keyboard.KeyCodes.BACKSPACE],
-      gamepad: [10], // Left trigger
+      gamepad: [4, 6], // Left trigger
     },
     UP: {
       keyboard: [
@@ -83,9 +83,17 @@ export default class InputManager {
 
     // Initialize gamepad input
     if (this.scene.input.gamepad) {
+      // Check if a gamepad is already connected
+      if (this.scene.input.gamepad.total > 0) {
+        this.gamepad = this.scene.input.gamepad.getPad(0);
+        console.log("Gamepad already connected, using existing gamepad");
+      }
+
+      // Also listen for future connections
       this.scene.input.gamepad.once(
         "connected",
         (gamepad: Phaser.Input.Gamepad.Gamepad) => {
+          console.log("Gamepad connected");
           this.gamepad = gamepad;
         }
       );

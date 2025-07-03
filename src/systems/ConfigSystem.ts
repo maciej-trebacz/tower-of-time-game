@@ -22,6 +22,7 @@ export interface EnemyTypeConfig {
   speed: number;
   maxHp: number;
   tintColor: number;
+  boss?: boolean;
 }
 
 // Building configuration interface
@@ -337,35 +338,36 @@ export default class ConfigSystem {
         },
         BOSS: {
           name: "Boss",
-          speed: 10,
-          maxHp: 200,
-          tintColor: 16737894,
+          speed: 20,
+          maxHp: 300,
+          boss: true,
+          tintColor: 11534591,
         },
       },
       towers: {
         basic_tower: {
-          name: "Basic Tower",
+          name: "Basic Turret",
           energyCost: 200,
           texture: "tower1",
-          description: "A basic defensive tower",
+          description: "A basic defensive turret",
           range: 100,
           damage: 1,
           shootingInterval: 1000,
           bulletSpeed: 500,
         },
         sniper_tower: {
-          name: "Sniper Tower",
+          name: "Sniper Turret",
           energyCost: 300,
           texture: "tower2",
           description:
-            "Long range tower with high bullet speed but slow firing rate",
+            "Long range turret with high bullet speed but slow firing rate",
           range: 200,
           damage: 2,
           shootingInterval: 2000,
           bulletSpeed: 1000,
         },
         slowdown_tower: {
-          name: "Slowdown Tower",
+          name: "Slowdown Turret",
           energyCost: 300,
           texture: "tower3",
           description: "Applies slow effect to enemies in range",
@@ -378,7 +380,7 @@ export default class ConfigSystem {
           slowDuration: 2500,
         },
         splash_tower: {
-          name: "Splash Tower",
+          name: "Splash Turret",
           energyCost: 350,
           texture: "tower4",
           description:
@@ -518,12 +520,14 @@ export default class ConfigSystem {
               amount: 15,
               interval: 1400,
               delay: 4000,
+              energyDropRate: 0.5,
             },
             {
               type: "BASIC",
               amount: 15,
               interval: 500,
               delay: 12000,
+              energyDropRate: 0.5,
             },
           ],
         },
@@ -535,12 +539,14 @@ export default class ConfigSystem {
               amount: 20,
               interval: 200,
               delay: 2000,
+              energyDropRate: 0.5,
             },
             {
               type: "FAST",
               amount: 20,
               interval: 400,
               delay: 4000,
+              energyDropRate: 0.5,
             },
           ],
         },
@@ -552,12 +558,14 @@ export default class ConfigSystem {
               amount: 20,
               interval: 2000,
               delay: 2000,
+              energyDropRate: 0.5,
             },
             {
               type: "BASIC",
               amount: 22,
               interval: 1200,
               delay: 6000,
+              energyDropRate: 0.5,
             },
           ],
         },
@@ -569,30 +577,47 @@ export default class ConfigSystem {
               amount: 30,
               interval: 50,
               delay: 2000,
+              energyDropRate: 0.3,
             },
             {
               type: "TANK",
               amount: 25,
               interval: 1500,
               delay: 3000,
+              energyDropRate: 0.3,
             },
             {
               type: "BASIC",
               amount: 30,
               interval: 200,
               delay: 6000,
+              energyDropRate: 0.3,
             },
             {
               type: "FAST",
               amount: 40,
               interval: 400,
               delay: 16000,
+              energyDropRate: 0.3,
             },
             {
               type: "FAST",
               amount: 40,
               interval: 450,
               delay: 16000,
+              energyDropRate: 0.3,
+            },
+          ],
+        },
+        {
+          name: "Final",
+          enemies: [
+            {
+              type: "BOSS",
+              amount: 1,
+              interval: 50,
+              delay: 4000,
+              energyDropRate: 0.1,
             },
           ],
         },
