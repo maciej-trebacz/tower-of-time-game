@@ -19,8 +19,8 @@ export default defineConfig({
       overlay: true, // Show HMR errors as overlay
     },
     watch: {
-      // Watch for changes in assets folder
-      ignored: ["!**/node_modules/**", "!**/dist/**"],
+      // Fine-tune file-watching: only ignore node_modules and build output; watch the rest
+      ignored: ["**/node_modules/**", "**/dist/**"],
     },
   },
   // Enable HMR for better development experience

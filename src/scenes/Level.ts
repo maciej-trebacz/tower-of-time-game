@@ -29,105 +29,144 @@ import DialogBox from "../ui/DialogBox";
 /* END-USER-IMPORTS */
 
 export default class Level extends Phaser.Scene {
+  constructor() {
+    super("Level");
 
-	constructor() {
-		super("Level");
-
-		/* START-USER-CTR-CODE */
+    /* START-USER-CTR-CODE */
     // Write your code here.
     /* END-USER-CTR-CODE */
-	}
+  }
 
-	editorCreate(): void {
+  editorCreate(): void {
+    // editabletilemap
+    this.cache.tilemap.add(
+      "editabletilemap_a29028ea-14dc-427e-a9a4-61c80dae566b",
+      {
+        format: 1,
+        data: {
+          width: 20,
+          height: 14,
+          orientation: "orthogonal",
+          tilewidth: 32,
+          tileheight: 32,
+          tilesets: [
+            {
+              columns: 4,
+              margin: 0,
+              spacing: 0,
+              tilewidth: 32,
+              tileheight: 32,
+              tilecount: 16,
+              firstgid: 1,
+              image: "tiles_ground",
+              name: "tiles_ground",
+              imagewidth: 128,
+              imageheight: 128,
+            },
+            {
+              columns: 8,
+              margin: 0,
+              spacing: 0,
+              tilewidth: 32,
+              tileheight: 32,
+              tilecount: 64,
+              firstgid: 17,
+              image: "tiles",
+              name: "tiles",
+              imagewidth: 256,
+              imageheight: 256,
+            },
+          ],
+          layers: [
+            {
+              type: "tilelayer",
+              name: "ground",
+              width: 20,
+              height: 14,
+              opacity: 1,
+              data: [
+                19, 19, 19, 19, 19, 25, 19, 19, 19, 19, 19, 19, 19, 19, 19, 20,
+                57, 58, 59, 65, 42, 43, 42, 43, 42, 28, 54, 43, 42, 43, 42, 43,
+                42, 43, 42, 28, 65, 73, 67, 57, 22, 22, 22, 22, 23, 26, 21, 22,
+                22, 22, 22, 22, 22, 22, 23, 28, 58, 58, 73, 65, 46, 46, 40, 27,
+                31, 26, 29, 27, 38, 18, 19, 19, 53, 39, 31, 28, 67, 73, 73, 58,
+                19, 20, 39, 27, 31, 26, 29, 27, 31, 26, 54, 42, 42, 37, 31, 28,
+                57, 58, 65, 66, 60, 28, 29, 27, 31, 49, 29, 27, 31, 28, 21, 22,
+                22, 45, 31, 26, 58, 66, 58, 13, 57, 28, 29, 27, 31, 43, 37, 27,
+                31, 26, 29, 18, 25, 19, 19, 33, 19, 19, 19, 20, 73, 28, 29, 27,
+                56, 22, 45, 27, 31, 26, 29, 26, 26, 54, 42, 42, 42, 42, 43, 28,
+                65, 28, 48, 46, 46, 46, 46, 46, 64, 26, 29, 26, 26, 21, 22, 22,
+                22, 22, 23, 28, 73, 34, 19, 19, 19, 19, 19, 19, 19, 51, 29, 26,
+                26, 29, 38, 18, 20, 39, 31, 28, 66, 60, 61, 60, 60, 61, 60, 61,
+                60, 28, 29, 34, 36, 29, 31, 26, 28, 29, 31, 28, 58, 68, 68, 68,
+                68, 68, 68, 68, 68, 28, 29, 42, 42, 37, 31, 28, 26, 29, 31, 28,
+                65, 58, 59, 58, 66, 67, 65, 73, 73, 28, 29, 22, 22, 45, 31, 26,
+                28, 48, 64, 28, 67, 66, 58, 65, 73, 65, 73, 65, 67, 34, 19, 19,
+                19, 19, 19, 33, 33, 35, 35, 36,
+              ],
+            },
+            {
+              type: "tilelayer",
+              name: "path",
+              width: 20,
+              height: 14,
+              opacity: 1,
+              data: [
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 27, 27,
+                27, 27, 0, 0, 0, 27, 27, 27, 27, 27, 27, 27, 27, 0, 0, 0, 0, 0,
+                27, 27, 27, 27, 0, 0, 0, 27, 0, 0, 0, 0, 0, 27, 27, 0, 0, 0, 0,
+                0, 0, 0, 0, 27, 0, 0, 0, 27, 0, 0, 0, 0, 0, 27, 27, 0, 0, 0, 0,
+                0, 0, 0, 0, 27, 0, 0, 0, 27, 0, 0, 27, 27, 27, 27, 27, 0, 0, 0,
+                0, 0, 0, 0, 0, 27, 0, 0, 0, 27, 0, 0, 27, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 27, 27, 27, 27, 27, 0, 0, 27, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 27, 0, 0, 27, 27, 27, 27,
+                27, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 27, 0, 0, 27, 27, 0, 0,
+                27, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 27, 0, 0, 27, 27, 0, 0,
+                27, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 27, 0, 0, 27, 27, 0, 0,
+                27, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 27, 27, 27, 27, 27, 0,
+                0, 27, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0,
+              ],
+            },
+          ],
+        },
+      }
+    );
+    const editabletilemap = this.add.tilemap(
+      "editabletilemap_a29028ea-14dc-427e-a9a4-61c80dae566b"
+    );
+    editabletilemap.addTilesetImage("tiles_ground");
+    editabletilemap.addTilesetImage("tiles");
 
-		// editabletilemap
-		this.cache.tilemap.add("editabletilemap_a29028ea-14dc-427e-a9a4-61c80dae566b", {
-			format: 1,
-			data: {
-				width: 20,
-				height: 14,
-				orientation: "orthogonal",
-				tilewidth: 32,
-				tileheight: 32,
-				tilesets: [
-					{
-						columns: 4,
-						margin: 0,
-						spacing: 0,
-						tilewidth: 32,
-						tileheight: 32,
-						tilecount: 16,
-						firstgid: 1,
-						image: "tiles_ground",
-						name: "tiles_ground",
-						imagewidth: 128,
-						imageheight: 128,
-					},
-					{
-						columns: 8,
-						margin: 0,
-						spacing: 0,
-						tilewidth: 32,
-						tileheight: 32,
-						tilecount: 64,
-						firstgid: 17,
-						image: "tiles",
-						name: "tiles",
-						imagewidth: 256,
-						imageheight: 256,
-					},
-				],
-				layers: [
-					{
-						type: "tilelayer",
-						name: "ground",
-						width: 20,
-						height: 14,
-						opacity: 1,
-						data: [19, 19, 19, 19, 19, 25, 19, 19, 19, 19, 19, 19, 19, 19, 19, 20, 57, 58, 59, 65, 42, 43, 42, 43, 42, 28, 54, 43, 42, 43, 42, 43, 42, 43, 42, 28, 65, 73, 67, 57, 22, 22, 22, 22, 23, 26, 21, 22, 22, 22, 22, 22, 22, 22, 23, 28, 58, 58, 73, 65, 46, 46, 40, 27, 31, 26, 29, 27, 38, 18, 19, 19, 53, 39, 31, 28, 67, 73, 73, 58, 19, 20, 39, 27, 31, 26, 29, 27, 31, 26, 54, 42, 42, 37, 31, 28, 57, 58, 65, 66, 60, 28, 29, 27, 31, 49, 29, 27, 31, 28, 21, 22, 22, 45, 31, 26, 58, 66, 58, 13, 57, 28, 29, 27, 31, 43, 37, 27, 31, 26, 29, 18, 25, 19, 19, 33, 19, 19, 19, 20, 73, 28, 29, 27, 56, 22, 45, 27, 31, 26, 29, 26, 26, 54, 42, 42, 42, 42, 43, 28, 65, 28, 48, 46, 46, 46, 46, 46, 64, 26, 29, 26, 26, 21, 22, 22, 22, 22, 23, 28, 73, 34, 19, 19, 19, 19, 19, 19, 19, 51, 29, 26, 26, 29, 38, 18, 20, 39, 31, 28, 66, 60, 61, 60, 60, 61, 60, 61, 60, 28, 29, 34, 36, 29, 31, 26, 28, 29, 31, 28, 58, 68, 68, 68, 68, 68, 68, 68, 68, 28, 29, 42, 42, 37, 31, 28, 26, 29, 31, 28, 65, 58, 59, 58, 66, 67, 65, 73, 73, 28, 29, 22, 22, 45, 31, 26, 28, 48, 64, 28, 67, 66, 58, 65, 73, 65, 73, 65, 67, 34, 19, 19, 19, 19, 19, 33, 33, 35, 35, 36],
-					},
-					{
-						type: "tilelayer",
-						name: "path",
-						width: 20,
-						height: 14,
-						opacity: 1,
-						data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 6, 6, 6, 6, 0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 0, 0, 0, 0, 0, 6, 6, 6, 6, 6, 0, 6, 6, 6, 0, 0, 0, 0, 6, 6, 0, 0, 0, 0, 0, 0, 0, 6, 6, 6, 0, 6, 6, 6, 0, 0, 0, 0, 6, 6, 0, 0, 0, 0, 0, 0, 0, 6, 6, 6, 0, 6, 6, 6, 0, 6, 6, 6, 6, 6, 0, 0, 0, 0, 0, 0, 0, 6, 6, 6, 0, 6, 6, 6, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 6, 6, 6, 6, 6, 6, 0, 6, 0, 0, 6, 6, 6, 6, 6, 6, 0, 0, 0, 6, 6, 6, 6, 6, 6, 6, 0, 6, 0, 0, 6, 6, 6, 6, 6, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 6, 6, 0, 0, 6, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 6, 6, 0, 0, 6, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 6, 6, 0, 0, 6, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 6, 6, 6, 6, 0, 0, 6, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-					},
-				],
-			},
-		});
-		const editabletilemap = this.add.tilemap("editabletilemap_a29028ea-14dc-427e-a9a4-61c80dae566b");
-		editabletilemap.addTilesetImage("tiles_ground");
-		editabletilemap.addTilesetImage("tiles");
+    // ground
+    editabletilemap.createLayer("ground", ["tiles", "tiles_ground"], 0, 0);
 
-		// ground
-		editabletilemap.createLayer("ground", ["tiles","tiles_ground"], 0, 0);
+    // path
+    const path = editabletilemap.createLayer("path", ["tiles"], 0, 0)!;
+    path.blendMode = Phaser.BlendModes.SCREEN;
 
-		// path
-		const path = editabletilemap.createLayer("path", ["tiles_ground"], 0, 0)!;
-		path.blendMode = Phaser.BlendModes.SCREEN;
+    // player
+    const player = new Player(this, 241, 252);
+    this.add.existing(player);
 
-		// player
-		const player = new Player(this, 97, 220);
-		this.add.existing(player);
+    // goal
+    const goal = new Goal(this, 576, 391);
+    this.add.existing(goal);
 
-		// goal
-		const goal = new Goal(this, 576, 391);
-		this.add.existing(goal);
+    // enemySpawner
+    const enemySpawner = new EnemySpawner(this, 26, 96);
+    this.add.existing(enemySpawner);
+    enemySpawner.alpha = 0.5;
 
-		// enemySpawner
-		const enemySpawner = new EnemySpawner(this, 26, 96);
-		this.add.existing(enemySpawner);
+    this.editabletilemap = editabletilemap;
 
-		this.editabletilemap = editabletilemap;
+    this.events.emit("scene-awake");
+  }
 
-		this.events.emit("scene-awake");
-	}
+  private editabletilemap!: Phaser.Tilemaps.Tilemap;
 
-	private editabletilemap!: Phaser.Tilemaps.Tilemap;
-
-	/* START-USER-CODE */
+  /* START-USER-CODE */
 
   private player!: Player;
   private tileHighlight!: Phaser.GameObjects.Graphics;
@@ -204,6 +243,12 @@ export default class Level extends Phaser.Scene {
     const children = this.children.getAll();
     let goalObject: Goal | undefined;
     let spawnerObject: EnemySpawner | undefined;
+
+    // Make the path layer invisible
+    const pathLayer = this.editabletilemap.getLayer("path");
+    if (pathLayer) {
+      pathLayer.tilemapLayer.visible = false;
+    }
 
     children.forEach((child) => {
       if (child instanceof Player) {
