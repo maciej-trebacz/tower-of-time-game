@@ -651,6 +651,48 @@ export default class Level extends Phaser.Scene {
 
       this.loadDefaultWaves();
     });
+
+    // Pause gameplay integration (for dialog boxes)
+    this.tutorialSystem.onPauseGameplay((paused: boolean) => {
+      console.log(`Tutorial requesting gameplay pause: ${paused}`);
+      this.pauseGameplayForDialog(paused);
+    });
+  }
+
+  /**
+   * Pause or resume gameplay for dialog boxes
+   */
+  private pauseGameplayForDialog(paused: boolean): void {
+    console.log(`Pausing gameplay for dialog: ${paused}`);
+
+    // Pause/resume enemy spawning
+    const spawner = this.getEnemySpawner();
+    if (spawner) {
+      if (paused) {
+        spawner.pauseSpawning();
+      } else {
+        spawner.resumeSpawning();
+      }
+    }
+
+    // Pause/resume all towers using the TowerManager
+    if (this.towerManager) {
+      this.towerManager.setPaused(paused);
+    }
+
+    // Pause/resume all enemy movement
+    const enemies = this.getAllEnemies();
+    enemies.forEach((enemy) => {
+      if (paused) {
+        if (typeof enemy.pauseMovement === "function") {
+          enemy.pauseMovement();
+        }
+      } else {
+        if (typeof enemy.resumeMovement === "function") {
+          enemy.resumeMovement();
+        }
+      }
+    });
   }
 
   /**

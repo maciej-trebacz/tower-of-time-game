@@ -56,6 +56,7 @@ export default class TutorialSystem {
   private onStepChangeCallbacks: ((step: TutorialStep) => void)[] = [];
   private onDialogShowCallbacks: ((text: string, isLast: boolean) => void)[] =
     [];
+  private onDialogHideCallbacks: (() => void)[] = [];
   private onTileHighlightCallbacks: ((
     x: number,
     y: number,
@@ -69,6 +70,7 @@ export default class TutorialSystem {
     [];
   private onEnemySpawnCallbacks: ((type: string, count: number) => void)[] = [];
   private onTutorialCompleteCallbacks: (() => void)[] = [];
+  private onPauseGameplayCallbacks: ((paused: boolean) => void)[] = [];
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -392,6 +394,10 @@ export default class TutorialSystem {
    */
   private onDialogSequenceComplete(): void {
     console.log(`Dialog sequence complete for step: ${this.currentStep}`);
+
+    // Notify that dialog is being hidden (will resume gameplay)
+    this.notifyDialogHide();
+
     switch (this.currentStep) {
       case TutorialStep.INTRO_DIALOG:
         console.log("Advancing from INTRO_DIALOG to WAIT_PERIOD");
@@ -488,6 +494,10 @@ export default class TutorialSystem {
     this.onDialogShowCallbacks.push(callback);
   }
 
+  public onDialogHide(callback: () => void): void {
+    this.onDialogHideCallbacks.push(callback);
+  }
+
   public onTileHighlight(
     callback: (x: number, y: number, show: boolean) => void
   ): void {
@@ -512,6 +522,10 @@ export default class TutorialSystem {
     this.onTutorialCompleteCallbacks.push(callback);
   }
 
+  public onPauseGameplay(callback: (paused: boolean) => void): void {
+    this.onPauseGameplayCallbacks.push(callback);
+  }
+
   // Event notification methods
   private notifyStepChange(step: TutorialStep): void {
     this.onStepChangeCallbacks.forEach((callback) => callback(step));
@@ -522,6 +536,15 @@ export default class TutorialSystem {
       `TutorialSystem notifying dialog show: "${text}" (callbacks: ${this.onDialogShowCallbacks.length})`
     );
     this.onDialogShowCallbacks.forEach((callback) => callback(text, isLast));
+    // Pause gameplay when dialog is shown
+    this.notifyPauseGameplay(true);
+  }
+
+  private notifyDialogHide(): void {
+    console.log("TutorialSystem notifying dialog hide");
+    this.onDialogHideCallbacks.forEach((callback) => callback());
+    // Resume gameplay when dialog is hidden
+    this.notifyPauseGameplay(false);
   }
 
   private notifyTileHighlight(x: number, y: number, show: boolean): void {
@@ -548,6 +571,11 @@ export default class TutorialSystem {
 
   private notifyTutorialComplete(): void {
     this.onTutorialCompleteCallbacks.forEach((callback) => callback());
+  }
+
+  private notifyPauseGameplay(paused: boolean): void {
+    console.log(`TutorialSystem notifying pause gameplay: ${paused}`);
+    this.onPauseGameplayCallbacks.forEach((callback) => callback(paused));
   }
 
   // Getters for external systems

@@ -114,6 +114,9 @@ export default class Enemy extends RewindableSprite {
   private slowMultiplier: number = 1.0; // Current slow multiplier
   private isSlowed: boolean = false;
 
+  // Pause state for dialog boxes
+  private isPaused: boolean = false;
+
   // Pathfinding properties
   private currentState: EnemyState = EnemyState.IDLE;
   private pathDestination: Point | null = null;
@@ -342,10 +345,17 @@ export default class Enemy extends RewindableSprite {
   }
 
   /**
-   * Override update to remove separate dead state tracking
-   * The parent class now handles all state recording including custom data
+   * Override update to skip state recording when paused
+   * This prevents "dead time" in rewind history during dialog pauses
    */
   public update(time: number, delta: number): void {
+    // Skip state recording when paused for dialog boxes
+    if (this.isPaused) {
+      // Still update health bar position even when paused
+      this.updateHealthBar();
+      return;
+    }
+
     // Call parent update which handles state recording automatically
     super.update(time, delta);
 
@@ -618,11 +628,11 @@ export default class Enemy extends RewindableSprite {
   }
 
   /**
-   * Override updateForward to skip logic when dead
+   * Override updateForward to skip logic when dead or paused
    */
   protected updateForward(time: number, delta: number): void {
-    // Skip all movement and pathfinding logic if dead
-    if (this.isDead) {
+    // Skip all movement and pathfinding logic if dead or paused
+    if (this.isDead || this.isPaused) {
       return;
     }
 
@@ -702,6 +712,40 @@ export default class Enemy extends RewindableSprite {
     if (this.currentState === EnemyState.IDLE) {
       // this.clearPathVisualization();
     }
+  }
+
+  /**
+   * Pause enemy movement (for dialog boxes)
+   */
+  public pauseMovement(): void {
+    this.isPaused = true;
+    // Pause animation when movement is paused
+    if (this.anims.isPlaying) {
+      this.anims.pause();
+    }
+    console.debug("Enemy movement paused");
+  }
+
+  /**
+   * Resume enemy movement (after dialog boxes)
+   */
+  public resumeMovement(): void {
+    this.isPaused = false;
+    // Resume animation when movement is resumed
+    if (this.anims.isPaused) {
+      this.anims.resume();
+    } else if (!this.anims.isPlaying && !this.isDead) {
+      // Ensure animation is playing if it should be
+      this.ensureAnimationIsPlaying();
+    }
+    console.debug("Enemy movement resumed");
+  }
+
+  /**
+   * Check if enemy movement is currently paused
+   */
+  public isMovementPaused(): boolean {
+    return this.isPaused;
   }
 
   /**
