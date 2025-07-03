@@ -15,7 +15,6 @@
  */
 
 import { Wave } from "./WaveSystem";
-import { SAMPLE_WAVES } from "../config/waves";
 
 // Enemy type configuration interface
 export interface EnemyTypeConfig {
@@ -289,109 +288,315 @@ export default class ConfigSystem {
    */
   private getDefaultConfig(): GameConfig {
     return {
-      version: 1, // Configuration version for migration
-      skipTutorial: false, // Tutorial enabled by default
-      rewindRecordingInterval: 1, // How often to record rewind states
+      version: 1,
+      skipTutorial: false,
+      rewindRecordingInterval: 4,
       player: {
-        speed: 200, // From Player.ts line 29
+        speed: 200,
       },
-
       energy: {
-        maxEnergy: 200, // From Level.ts line 287
-        regenerationRate: 20, // From Level.ts line 288 (1 energy every 20 frames)
-        initialEnergy: 100, // From Level.ts line 289
-        rewindCostPerTick: 1, // From memories
+        maxEnergy: 500,
+        regenerationRate: 50,
+        initialEnergy: 300,
+        rewindCostPerTick: 0.2,
       },
-
       goal: {
-        maxHP: 100, // From Level.ts line 306-307
+        maxHP: 100,
         initialHP: 100,
-        attackDamage: 5, // From Goal.ts line 36
-        attackInterval: 1000, // From Goal.ts line 37 (1 second)
-        collisionRadius: 30, // From Goal.ts line 35
+        attackDamage: 5,
+        attackInterval: 1000,
+        collisionRadius: 30,
       },
-
       waveSystem: {
-        waveStartDelay: 2000, // 2 seconds between waves
-        overlayDisplayDuration: 2000, // 2 seconds to show wave start overlay
+        waveStartDelay: 2000,
+        overlayDisplayDuration: 2000,
       },
-
       energyCrystal: {
-        energyValue: 10, // From EnergyCrystal.ts line 25
-        lifetimeDuration: 8000, // From EnergyCrystal.ts line 33 (was 15000 but code shows 8000)
-        warningDuration: 4000, // From EnergyCrystal.ts line 34 (was 5000 but code shows 4000)
+        energyValue: 10,
+        lifetimeDuration: 8000,
+        warningDuration: 4000,
       },
-
       enemyTypes: {
         BASIC: {
           name: "Basic",
           speed: 60,
-          maxHp: 3,
-          tintColor: 0xffffff, // No tint (white/original color)
+          maxHp: 4,
+          tintColor: 16777215,
         },
         FAST: {
           name: "Fast",
           speed: 100,
           maxHp: 2,
-          tintColor: 0x66ff66, // Green tint
+          tintColor: 6750054,
         },
         TANK: {
           name: "Tank",
           speed: 40,
-          maxHp: 5,
-          tintColor: 0xff6666, // Red tint
+          maxHp: 10,
+          tintColor: 16737894,
+        },
+        BOSS: {
+          name: "Boss",
+          speed: 10,
+          maxHp: 200,
+          tintColor: 16737894,
         },
       },
-
       towers: {
         basic_tower: {
           name: "Basic Tower",
-          energyCost: 20,
+          energyCost: 200,
           texture: "tower1",
           description: "A basic defensive tower",
-          range: 100, // From BasicTower.ts line 31
+          range: 100,
           damage: 1,
-          shootingInterval: 1000, // From BasicTower.ts line 32
-          bulletSpeed: 500, // From Bullet.ts line 33
+          shootingInterval: 1000,
+          bulletSpeed: 500,
         },
         sniper_tower: {
           name: "Sniper Tower",
-          energyCost: 40,
+          energyCost: 300,
           texture: "tower2",
           description:
             "Long range tower with high bullet speed but slow firing rate",
-          range: 200, // Twice the range of basic tower
+          range: 200,
           damage: 2,
-          shootingInterval: 2000, // Slower shooting
-          bulletSpeed: 1000, // Twice the bullet speed
+          shootingInterval: 2000,
+          bulletSpeed: 1000,
         },
         slowdown_tower: {
           name: "Slowdown Tower",
-          energyCost: 50,
+          energyCost: 300,
           texture: "tower3",
           description: "Applies slow effect to enemies in range",
           range: 80,
-          damage: 0, // No direct damage
-          shootingInterval: 0, // Not used for effect towers
-          effectInterval: 1000, // Apply slow every 1 second
+          damage: 0,
+          shootingInterval: 0,
+          effectInterval: 2500,
           effectRadius: 80,
-          slowAmount: 0.5, // 50% speed reduction
-          slowDuration: 3000, // 3 seconds slow duration
+          slowAmount: 0.5,
+          slowDuration: 2500,
         },
         splash_tower: {
           name: "Splash Tower",
-          energyCost: 50,
+          energyCost: 350,
           texture: "tower4",
           description:
             "Fires area-of-effect blasts that damage all enemies in radius",
           range: 60,
-          damage: 2,
-          shootingInterval: 2000, // Slower shooting for balance
-          effectRadius: 60, // Blast radius
+          damage: 1,
+          shootingInterval: 3500,
+          effectRadius: 60,
         },
       },
-
-      waves: SAMPLE_WAVES,
+      waves: [
+        {
+          name: "First Contact",
+          enemies: [
+            {
+              type: "BASIC",
+              amount: 3,
+              interval: 2500,
+              delay: 4000,
+            },
+          ],
+        },
+        {
+          name: "Second Contact",
+          enemies: [
+            {
+              type: "BASIC",
+              amount: 5,
+              interval: 1500,
+              delay: 3000,
+            },
+            {
+              type: "BASIC",
+              amount: 5,
+              interval: 1200,
+              delay: 20000,
+            },
+          ],
+        },
+        {
+          name: "Growing Threat",
+          enemies: [
+            {
+              type: "BASIC",
+              amount: 5,
+              interval: 800,
+              delay: 2000,
+            },
+            {
+              type: "FAST",
+              amount: 4,
+              interval: 2000,
+              delay: 10000,
+            },
+            {
+              type: "BASIC",
+              amount: 6,
+              interval: 2000,
+              delay: 20000,
+            },
+            {
+              type: "FAST",
+              amount: 5,
+              interval: 2000,
+              delay: 28000,
+            },
+          ],
+        },
+        {
+          name: "Full Assault",
+          enemies: [
+            {
+              type: "BASIC",
+              amount: 10,
+              interval: 600,
+              delay: 2000,
+            },
+            {
+              type: "FAST",
+              amount: 8,
+              interval: 1500,
+              delay: 8000,
+            },
+            {
+              type: "TANK",
+              amount: 3,
+              interval: 3500,
+              delay: 16000,
+            },
+          ],
+        },
+        {
+          name: "Armored Division",
+          enemies: [
+            {
+              type: "BASIC",
+              amount: 10,
+              interval: 2000,
+              delay: 2000,
+            },
+            {
+              type: "TANK",
+              amount: 3,
+              interval: 2500,
+              delay: 3000,
+            },
+          ],
+        },
+        {
+          name: "Lightning Strike",
+          enemies: [
+            {
+              type: "FAST",
+              amount: 10,
+              interval: 800,
+              delay: 2000,
+            },
+            {
+              type: "FAST",
+              amount: 10,
+              interval: 1200,
+              delay: 6000,
+            },
+          ],
+        },
+        {
+          name: "Hard 1",
+          enemies: [
+            {
+              type: "TANK",
+              amount: 7,
+              interval: 2000,
+              delay: 2000,
+            },
+            {
+              type: "FAST",
+              amount: 15,
+              interval: 1400,
+              delay: 4000,
+            },
+            {
+              type: "BASIC",
+              amount: 15,
+              interval: 500,
+              delay: 12000,
+            },
+          ],
+        },
+        {
+          name: "Hard 2",
+          enemies: [
+            {
+              type: "FAST",
+              amount: 20,
+              interval: 200,
+              delay: 2000,
+            },
+            {
+              type: "FAST",
+              amount: 20,
+              interval: 400,
+              delay: 4000,
+            },
+          ],
+        },
+        {
+          name: "Hard 3",
+          enemies: [
+            {
+              type: "TANK",
+              amount: 20,
+              interval: 2000,
+              delay: 2000,
+            },
+            {
+              type: "BASIC",
+              amount: 22,
+              interval: 1200,
+              delay: 6000,
+            },
+          ],
+        },
+        {
+          name: "Final",
+          enemies: [
+            {
+              type: "BASIC",
+              amount: 30,
+              interval: 50,
+              delay: 2000,
+            },
+            {
+              type: "TANK",
+              amount: 25,
+              interval: 1500,
+              delay: 3000,
+            },
+            {
+              type: "BASIC",
+              amount: 30,
+              interval: 200,
+              delay: 6000,
+            },
+            {
+              type: "FAST",
+              amount: 40,
+              interval: 400,
+              delay: 16000,
+            },
+            {
+              type: "FAST",
+              amount: 40,
+              interval: 450,
+              delay: 16000,
+            },
+          ],
+        },
+      ],
     };
   }
 

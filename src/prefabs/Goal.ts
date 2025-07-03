@@ -29,6 +29,9 @@ export default class Goal extends Phaser.GameObjects.Sprite {
 
   private goalHPSystem?: GoalHPSystem;
   private hitFlashTween?: Phaser.Tweens.Tween;
+  private glowEffect?: Phaser.GameObjects.Graphics;
+  private shadowEffect?: Phaser.GameObjects.Graphics;
+  private glowPulseTween?: Phaser.Tweens.Tween;
 
   // Goal configuration - will be set from ConfigSystem
   private collisionRadius: number = 30; // Distance at which enemies can explode
@@ -51,6 +54,14 @@ export default class Goal extends Phaser.GameObjects.Sprite {
         this.collisionRadius = goalConfig.collisionRadius;
       }
     }
+
+    // Set the gem to appear on top of effects
+    this.setDepth(12);
+
+    // Add visual effects
+    this.createShadowEffect();
+    this.createGlowEffect();
+    this.startGlowPulse();
 
     console.log("Goal initialized at", this.x, this.y);
     console.log(`Goal config: collision radius=${this.collisionRadius}`);
@@ -206,6 +217,64 @@ export default class Goal extends Phaser.GameObjects.Sprite {
   }
 
   /**
+   * Create drop shadow effect
+   */
+  private createShadowEffect(): void {
+    this.shadowEffect = this.scene.add.graphics();
+    this.shadowEffect.x = this.x;
+    this.shadowEffect.y = this.y;
+
+    // Create a dark shadow ellipse below the gem
+    this.shadowEffect.fillStyle(0x000000, 0.25); // Subtle shadow
+    this.shadowEffect.fillEllipse(0, 12, 20, 8); // Refined shadow size
+
+    // Set depth to be behind the gem (use explicit positive depth)
+    this.shadowEffect.setDepth(10);
+  }
+
+  /**
+   * Create glow effect
+   */
+  private createGlowEffect(): void {
+    this.glowEffect = this.scene.add.graphics();
+    this.glowEffect.x = this.x;
+    this.glowEffect.y = this.y;
+
+    // Create a purple glow with gradient effect
+    const glowRadius = 30;
+    const glowColor = 0x9966cc; // Light purple
+
+    // Create multiple circles with decreasing alpha for gradient effect
+    for (let i = 0; i < 5; i++) {
+      const radius = glowRadius - i * 6;
+      const alpha = 0.2 - i * 0.02; // Subtle glow effect
+      this.glowEffect.fillStyle(glowColor, alpha);
+      this.glowEffect.fillCircle(0, 0, radius);
+    }
+
+    // Set depth to be behind the gem but above shadow
+    this.glowEffect.setDepth(11);
+  }
+
+  /**
+   * Start the glow pulsing animation
+   */
+  private startGlowPulse(): void {
+    if (!this.glowEffect) return;
+
+    this.glowPulseTween = this.scene.tweens.add({
+      targets: this.glowEffect,
+      scaleX: 1.25,
+      scaleY: 1.25,
+      alpha: 0.7,
+      duration: 2000,
+      ease: "Sine.easeInOut",
+      yoyo: true,
+      repeat: -1, // Infinite loop
+    });
+  }
+
+  /**
    * Get the collision radius for debugging
    */
   public getCollisionRadius(): number {
@@ -218,6 +287,18 @@ export default class Goal extends Phaser.GameObjects.Sprite {
   public destroy(fromScene?: boolean): void {
     if (this.hitFlashTween) {
       this.hitFlashTween.stop();
+    }
+
+    if (this.glowPulseTween) {
+      this.glowPulseTween.stop();
+    }
+
+    if (this.glowEffect) {
+      this.glowEffect.destroy();
+    }
+
+    if (this.shadowEffect) {
+      this.shadowEffect.destroy();
     }
 
     super.destroy(fromScene);

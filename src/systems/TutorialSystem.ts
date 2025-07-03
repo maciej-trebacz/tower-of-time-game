@@ -146,7 +146,8 @@ export default class TutorialSystem {
     this.tutorialSteps.set(TutorialStep.REWIND_INSTRUCTION, {
       step: TutorialStep.REWIND_INSTRUCTION,
       dialogs: [
-        "What are you doing?They're almost at the crystal! Activate Temporal Rewind NOW!",
+        "What are you doing? They're almost at the crystal!",
+        "Activate Temporal Rewind NOW! [Hold Backspace]",
       ],
     });
 
