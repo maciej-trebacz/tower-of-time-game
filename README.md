@@ -12,7 +12,7 @@ A time-traveling tower defense game where you defend your base against waves of 
 
 ![Screenshot](screenshot.png)
 
-## About
+## About the game
 
 Tower of Time is a unique tower defense game that combines strategic building with time manipulation mechanics. When enemies overwhelm your defenses, use your time-travel powers to rewind and rebuild your strategy. The game features multiple tower types, energy management, and wave-based enemy spawning.
 
@@ -29,6 +29,25 @@ Game supports both keyboard and gamepad.
 - **Move**: Arrow Keys / Gamepad Analog Stick
 - **Action**: Spacebar / Cross (PlayStation) / A (Xbox)
 - **Rewind**: Backspace / Left Trigger
+
+## Vibe Coding Proof of Concept
+
+This game serves as a proof of concept for AI-assisted game development. Approximately 95% of the codebase was written by AI using:
+
+- **[Augment Code](https://augmentcode.com)** - Advanced codebase context and AI coding assistance
+- **[Cursor](https://cursor.sh)** - AI-powered code editor, mostly using Agent mode
+- **Claude Sonnet 4** - My LLM of choice for this project (also used OpenAI o3 and Claude Opus 4 occasionally)
+
+For detailed prompts and development process, see [PROMPTS.md](PROMPTS.md).
+
+What I've learned:
+
+- It is entirely possible to develop a game with AI, but you need to know what you're doing
+- AI makes prototyping super fast, but as you transition from prototype to final game you need to be careful
+- AIs like to write *a lot* of code, this project could probably have two times less code
+- Claude Sonnet 4 knows Phaser.js pretty well but for key areas I've given it a URL to the docs for the specific feature I was working on and it helped
+- If the AI gets stuck on something ask it to add debug/console logs and share them with the agent
+- If after that it still gets stuck don't fight it, roll back everything and try rephrasing the prompt or giving it more context
 
 ## Tech Stack
 
@@ -67,25 +86,6 @@ public/
 ├── style.css       # Basic CSS styles
 index.html          # Game entry point
 ```
-
-## Vibe Coding Proof of Concept
-
-This game serves as a proof of concept for AI-assisted game development. Approximately 95% of the codebase was written by AI using:
-
-- **[Augment Code](https://augmentcode.com)** - Advanced codebase context and AI coding assistance
-- **[Cursor](https://cursor.sh)** - AI-powered code editor, mostly using Agent mode
-- **Claude Sonnet 4** - My LLM of choice for this project (also used OpenAI o3 and Claude Opus 4 occasionally)
-
-The development process demonstrates how modern AI tools can accelerate game development while maintaining code quality and architectural consistency. For detailed prompts and development process, see [PROMPTS.md](PROMPTS.md).
-
-What I've learned:
-
-- It is entirely possible to develop a game with AI, but you need to know what you're doing
-- AI makes prototyping super fast, but as you transition from prototype to final game you need to be careful
-- AIs like to write *a lot* of code, this project could probably have two times less code
-- Claude Sonnet 4 knows Phaser.js pretty well but for key areas I've given it a URL to the docs for the specific feature I was working on and it helped
-- If the AI gets stuck on something ask it to add debug/console logs and share them with the agent
-- If after that it still gets stuck don't fight it, roll back everything and try rephrasing the prompt or giving it more context
 
 ## Credits
 
