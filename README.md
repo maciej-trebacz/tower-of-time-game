@@ -1,93 +1,107 @@
-# Phaser Editor Vite TypeScript Template
+<div align="center">
+  <img src="cover.png" alt="Tower of Time" width="640">
+</div>
 
-This is a Phaser Editor v4 project template that uses Vite TypeScript for bundling. It supports hot-reloading for quick development workflow and includes scripts to generate production-ready builds.
+# Tower of Time
 
-## What is Phaser Editor?
+*Entry for Beginner's Jam Summer 2025*
 
-Phaser Editor enables you to visually create Phaser games. Instead of entering numbers in your code to position Game Objects, you can drag and drop them into place, tweak their animations, adjust their physics bodies, enable special effects, and more. It's quicker and faster for both artists and developers alike and publishes pure Phaser code.
+A time-traveling tower defense game where you defend your base against waves of enemies using the power to rewind time.
 
-See more at [phaser.io](https://phaser.io/editor)
+**[🎮 Play the game at https://m4v3k.itch.io/tower-of-time](https://m4v3k.itch.io/tower-of-time)**
 
-## Requirements
+![Screenshot](screenshot.png)
 
-[Node.js](https://nodejs.org) is required to install dependencies and run scripts via `npm`.
+## About
 
-An active subscription to Phaser Editor is required to load and use this template within it.
+Tower of Time is a unique tower defense game that combines strategic building with time manipulation mechanics. When enemies overwhelm your defenses, use your time-travel powers to rewind and rebuild your strategy. The game features multiple tower types, energy management, and wave-based enemy spawning.
 
-## Available Commands
+### Key Features
+
+- **Time Rewind**: Roll back time to survive the enemy waves
+- **Multiple Tower Types**: Basic turrets, sniper towers, slowdown towers, and splash damage towers
+- **Energy System**: Manage energy for building towers and rewinding time
+
+## Controls
+
+Game supports both keyboard and gamepad.
+
+- **Move**: Arrow Keys / Gamepad Analog Stick
+- **Action**: Spacebar / Cross (PlayStation) / A (Xbox)
+- **Rewind**: Backspace / Left Trigger
+
+## Tech Stack
+
+- **Engine**: Phaser 3 (v3.90.0) with Phaser Editor v4
+- **Language**: TypeScript
+- **Build Tool**: Vite
+
+## Development
+
+### Requirements
+
+- [Node.js](https://nodejs.org) (for package management)
+- [pnpm](https://pnpm.io) (package manager)
+
+### Available Commands
 
 | Command | Description |
 |---------|-------------|
-| `npm install`   | Install project dependencies |
-| `npm start`     | Launch a development web server |
-| `npm run build` | Create a production build in the `dist` folder |
+| `pnpm install` | Install project dependencies |
+| `pnpm dev` | Start development server |
+| `pnpm build` | Build for production |
 
-## Writing Code
+### Project Structure
 
-After cloning the repo, run `npm install` from your project directory.
+```
+src/
+├── main.ts         # Entry point and configuration
+├── scenes/         # Scenes (Title, Level, Configure)
+├── prefabs/        # Prefabs (Player, Towers, Enemies)
+├── systems/        # Systems (Energy, Building, Config)
+├── components/     # Components (Input, Rewind)
+├── ui/             # UI components (Bars, Menus, Dialogs)
+└── utils/          # Utilities (Sound, Music, Keys)
+public/
+├── assets/         # Assets (Images, Sounds, Fonts)
+├── style.css       # Basic CSS styles
+index.html          # Game entry point
+```
 
-To start the local development server use `npm run dev`.
+## Vibe Coding Proof of Concept
 
-## Deploying to Production
+This game serves as a proof of concept for AI-assisted game development. Approximately 95% of the codebase was written by AI using:
 
-To create a production build use the command `npm run build`.
+- **[Augment Code](https://augmentcode.com)** - Advanced codebase context and AI coding assistance
+- **[Cursor](https://cursor.sh)** - AI-powered code editor, mostly using Agent mode
+- **Claude Sonnet 4** - My LLM of choice for this project (also used OpenAI o3 and Claude Opus 4 occasionally)
 
-This will take your game code and build it into a single bundle, ready for deployment. This bundle is saved to the `dist` folder. The deployment script will also copy any assets your project imported, or stored in the public assets folder.
+The development process demonstrates how modern AI tools can accelerate game development while maintaining code quality and architectural consistency. For detailed prompts and development process, see [PROMPTS.md](PROMPTS.md).
 
-To deploy your game, upload *all* of the contents of the `dist` folder to a public-facing web server.
+What I've learned:
 
-## Phaser Editor considerations
+- It is entirely possible to develop a game with AI, but you need to know what you're doing
+- AI makes prototyping super fast, but as you transition from prototype to final game you need to be careful
+- AIs like to write *a lot* of code, this project could probably have two times less code
+- Claude Sonnet 4 knows Phaser.js pretty well but for key areas I've given it a URL to the docs for the specific feature I was working on and it helped
+- If the AI gets stuck on something ask it to add debug/console logs and share them with the agent
+- If after that it still gets stuck don't fight it, roll back everything and try rephrasing the prompt or giving it more context
 
-### Excluding files from the project
+## Credits
 
-You don't want to add every file in this template to your Phaser Editor project. For example, the whole of `node_modules` can be excluded.
+- **Idea, coding & art**: m4v3k
+- **Balancing, menu music & testing**: death_unites_us
+- **In-game music**: Amnesia Fortnight - "A - Spacebase DF-9"
 
-The `skip` section in the `phasereditor2d.config.json` file contains the folder and files to exclude from the project.
+### Art Assets
 
-[Learn more about resource filtering in Phaser Editor](https://phaser.io/editor/docs/misc/resources-filtering)
+- **Space Station-Game** asset by **jonik9i**
+- **Ocunid** Monster by **Robocelot**
+- **Void Main Ship** by **Foozle**
+- **Pixel purple gem** by **Lunarnia**
+- **Seamless Space Backgrounds** by **Screaming Brain Studios**
+- Sounds from freesound.org
 
-### Asset Pack
+## License
 
-Phaser has the ability to load what are known as 'asset packs'. These are JSON files that describe all of the content that your game needs to load, such as images, audio, and fonts. Phaser Editor will generate and use asset packs intensively and tools such as the Scene Editor depend upon the information stored in the asset pack files.
-
-You can have multiple asset packs per project, which is the recommended practice for larger games, allowing you to load only the pack of assets the game requires at that specific point.
-
-In this template, we have pre-configured two types of asset packs: `boot-asset-pack.json` and `preload-asset-pack.json`.
-
-The `boot-asset-pack.json` file is used to load assets when the game first boots. Typically, you would store a small selection of initial assets in here, such as a loading screen image and progress bar.
-
-The `preload-asset-pack.json` in this template contains the rest of the assets the game needs. You are free to create additional packs as required, but for the sake of simplicity, this template has been configured with just these two packs.
-
-[Learn more about Asset Pack loading in Phaser](https://newdocs.phaser.io/docs/3.80.0/Phaser.Loader.LoaderPlugin#pack)
-
-The command `npm run build` also includes the execution of the `phaser-asset-pack-hashing` tool. It implements a "cache-busting" strategy and modifies the URLs in the asset packs and other assets in the `public` folder.
-
-### Scene, User Components, and ScriptNode configuration
-
-The Scenes, User Components, and ScriptNodes are configured to compile to TypeScript ES modules. Also, the compilers auto-import the classes used in the generated code.
-
-### ScriptNodes
-
-The project requires the following script libraries:
-
-* [@phaserjs/editor-scripts-core](https://www.npmjs.com/package/@phaserjs/editor-scripts-core)
-* [@phaserjs/editor-scripts-simple-animations](https://www.npmjs.com/package/@phaserjs/editor-scripts-simple-animations)
-
-You can add your script nodes to the `src/script-nodes` folder.
-
-## Join the Phaser Community!
-
-We love to see what developers like you create with Phaser! It really motivates us to keep improving. So please join our community and show off your work 😄
-
-**Visit:** The [Phaser website](https://phaser.io) and follow on [Phaser Twitter](https://twitter.com/phaser_)<br />
-**Play:** Some of the amazing games [#madewithphaser](https://twitter.com/search?q=%23madewithphaser&src=typed_query&f=live)<br />
-**Learn:** [API Docs](https://newdocs.phaser.io), [Support Forum](https://phaser.discourse.group/) and [StackOverflow](https://stackoverflow.com/questions/tagged/phaser-framework)<br />
-**Discord:** Join us on [Discord](https://discord.gg/phaser)<br />
-**Code:** 2000+ [Examples](https://labs.phaser.io)<br />
-**Read:** The [Phaser World](https://phaser.io/community/newsletter) Newsletter<br />
-
-Created by [Phaser Studio](mailto:support@phaser.io). Powered by coffee, anime, pixels and love.
-
-The Phaser logo and characters are &copy; 2011 - 2024 Phaser Studio Inc.
-
-All rights reserved.
+MIT License - see [LICENSE](LICENSE) file for details.

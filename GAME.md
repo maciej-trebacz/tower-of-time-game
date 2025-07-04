@@ -1,23 +1,10 @@
 # Game Design Document
 
-## Theme: Time Travel
+This is the first document I wrote after learning about the theme for the game jam I was participating in.
 
-Idea brainstorming:
+I was exploring different ideas and ended up with a tower-defense type of game given the time constraints and the fact that this was my first real game project.
 
-### Idea 1
-
-A 2d platformer where you can split the timeline and do several things at once,
-but each split costs you in some way. In order to restore your energy/abilities you need to meet up with 
-your other selves and merge back.
-
-### Idea 2
-
-A simulation game where you can freely explore the whole timeline and everything you do in the past has consequences on the future. It's a building/strategy game where you start with only few people but because you can manipulate time you can very quickly build a whole village. You need to plan ahead so that when you jump forward in time your village not only survives but advances your goal.
-  * for example you can plant a seed in the past and then advance time to see a small bush grow, then a tree, then finally it withers away
-  * start a drill in one direction and advance time to see what it did
-  * build a house -> a family moves in -> has children that do something?
-
-### Idea 3 (winner!)
+## Initial idea draft
 
 A tower-defense type of game where you can roll back time to build up your defenses. You normally don't have enough time
 to do it in one go, but rolling back gives you more time to build. Maybe you can roll back only certain amount of times and you have
@@ -48,8 +35,9 @@ OR your time travel is infinite, but each time you do it your enemies get strong
 ### The Plan
 
 Prototype:
+
 √ Build a level using tilemaps where a player character can fly around, have collision with walls
 √ Add the ability to build structures just below where the player flies
   * interact menu: build, upgrade, destroy
-* Have an end goal and an enemy spawner that can spawn enemy waves
-* Ability to roll back time which resets the position of enemies to where they were X seconds ago
+√ Have an end goal and an enemy spawner that can spawn enemy waves
+√ Ability to roll back time which resets the position of enemies to where they were X seconds ago

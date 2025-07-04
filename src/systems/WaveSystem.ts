@@ -70,7 +70,8 @@ export default class WaveSystem {
   private onEnemySpawnCallbacks: ((event: WaveEnemySpawnEvent) => void)[] = [];
   private onWaveStartCallbacks: ((
     waveIndex: number,
-    waveName?: string
+    waveName?: string,
+    totalWaves?: number
   ) => void)[] = [];
   private onAllWavesCompleteCallbacks: (() => void)[] = [];
 
@@ -258,7 +259,11 @@ export default class WaveSystem {
     );
 
     // Notify wave start callbacks
-    this.notifyWaveStart(this.currentWaveIndex + 1, currentWave.name);
+    this.notifyWaveStart(
+      this.currentWaveIndex + 1,
+      currentWave.name,
+      this.waves.length
+    );
 
     // Initialize spawn states for each enemy type in the wave
     currentWave.enemies.forEach((enemyConfig, index) => {
@@ -383,10 +388,14 @@ export default class WaveSystem {
   /**
    * Notify wave start subscribers
    */
-  private notifyWaveStart(waveIndex: number, waveName?: string): void {
+  private notifyWaveStart(
+    waveIndex: number,
+    waveName?: string,
+    totalWaves?: number
+  ): void {
     this.onWaveStartCallbacks.forEach((callback) => {
       try {
-        callback(waveIndex, waveName);
+        callback(waveIndex, waveName, totalWaves);
       } catch (error) {
         console.error("Error in wave start callback:", error);
       }
@@ -424,7 +433,11 @@ export default class WaveSystem {
    * Subscribe to wave start events
    */
   public onWaveStart(
-    callback: (waveIndex: number, waveName?: string) => void
+    callback: (
+      waveIndex: number,
+      waveName?: string,
+      totalWaves?: number
+    ) => void
   ): void {
     this.onWaveStartCallbacks.push(callback);
   }

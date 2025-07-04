@@ -100,7 +100,7 @@ export default class Title extends Phaser.Scene {
    */
   private createButtons(): void {
     const centerX = this.scale.width / 2;
-    const startY = this.scale.height / 2 + 90;
+    const startY = this.scale.height / 2 + 40;
     const buttonSpacing = 80;
 
     // Create START button
@@ -111,20 +111,19 @@ export default class Title extends Phaser.Scene {
     this.startButtonText = this.startButton.getAt(1) as Phaser.GameObjects.Text;
 
     // Create CONFIGURE button
-    // this.configureButton = this.createButton(
-    //   centerX,
-    //   startY + buttonSpacing,
-    //   "CONFIGURE",
-    //   () => this.handleConfigure()
-    // );
-    // this.configureButtonBg = this.buttonBackgrounds[1];
-    // this.configureButtonText = this.configureButton.getAt(
-    //   1
-    // ) as Phaser.GameObjects.Text;
+    this.configureButton = this.createButton(
+      centerX,
+      startY + buttonSpacing,
+      "CONFIGURE",
+      () => this.handleConfigure()
+    );
+    this.configureButtonBg = this.buttonBackgrounds[1];
+    this.configureButtonText = this.configureButton.getAt(
+      1
+    ) as Phaser.GameObjects.Text;
 
     // Set up button array for navigation
-    // this.buttons = [this.startButton, this.configureButton];
-    this.buttons = [this.startButton];
+    this.buttons = [this.startButton, this.configureButton];
 
     // Update button selection
     this.updateButtonSelection();

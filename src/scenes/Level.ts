@@ -1471,14 +1471,16 @@ export default class Level extends Phaser.Scene {
     // Subscribe to wave start events to show overlay BEFORE starting waves
     const waveSystem = this.enemySpawner.getWaveSystem();
     if (waveSystem && this.waveStartOverlay) {
-      waveSystem.onWaveStart((waveIndex: number, waveName?: string) => {
-        console.log(
-          `Wave start event received: Wave ${waveIndex}${
-            waveName ? ` (${waveName})` : ""
-          }`
-        );
-        this.waveStartOverlay!.showWave(waveIndex, waveName);
-      });
+      waveSystem.onWaveStart(
+        (waveIndex: number, waveName?: string, totalWaves?: number) => {
+          console.log(
+            `Wave start event received: Wave ${waveIndex}${
+              waveName ? ` (${waveName})` : ""
+            }${totalWaves ? ` (${waveIndex}/${totalWaves})` : ""}`
+          );
+          this.waveStartOverlay!.showWave(waveIndex, waveName, totalWaves);
+        }
+      );
 
       // Subscribe to all waves complete event to show congratulations
       waveSystem.onAllWavesComplete(() => {
@@ -1512,14 +1514,16 @@ export default class Level extends Phaser.Scene {
     // Subscribe to wave start events to show overlay BEFORE starting waves
     const waveSystem = this.enemySpawner.getWaveSystem();
     if (waveSystem && this.waveStartOverlay) {
-      waveSystem.onWaveStart((waveIndex: number, waveName?: string) => {
-        console.log(
-          `Wave start event received: Wave ${waveIndex}${
-            waveName ? ` (${waveName})` : ""
-          }`
-        );
-        this.waveStartOverlay!.showWave(waveIndex, waveName);
-      });
+      waveSystem.onWaveStart(
+        (waveIndex: number, waveName?: string, totalWaves?: number) => {
+          console.log(
+            `Wave start event received: Wave ${waveIndex}${
+              waveName ? ` (${waveName})` : ""
+            }${totalWaves ? ` (${waveIndex}/${totalWaves})` : ""}`
+          );
+          this.waveStartOverlay!.showWave(waveIndex, waveName, totalWaves);
+        }
+      );
 
       // Subscribe to all waves complete event to show congratulations
       waveSystem.onAllWavesComplete(() => {
@@ -1537,15 +1541,19 @@ export default class Level extends Phaser.Scene {
 
   /**
    * Test the wave start overlay
-   * Call from console: game.scene.getScene('Level').testWaveOverlay(waveNumber, waveName)
+   * Call from console: game.scene.getScene('Level').testWaveOverlay(waveNumber, waveName, totalWaves)
    */
-  public testWaveOverlay(waveNumber: number = 1, waveName?: string): void {
+  public testWaveOverlay(
+    waveNumber: number = 1,
+    waveName?: string,
+    totalWaves?: number
+  ): void {
     if (this.waveStartOverlay) {
-      this.waveStartOverlay.showWave(waveNumber, waveName);
+      this.waveStartOverlay.showWave(waveNumber, waveName, totalWaves);
       console.log(
         `Showing test wave overlay: Wave ${waveNumber}${
           waveName ? ` (${waveName})` : ""
-        }`
+        }${totalWaves ? ` (${waveNumber}/${totalWaves})` : ""}`
       );
     } else {
       console.log("Wave start overlay not initialized");

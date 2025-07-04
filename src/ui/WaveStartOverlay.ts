@@ -64,23 +64,33 @@ export default class WaveStartOverlay extends Phaser.GameObjects.Container {
    * Show the wave start overlay with animation
    * @param waveNumber The wave number to display
    * @param waveName Optional wave name
+   * @param totalWaves Total number of waves (to determine if this is the final wave)
    */
-  public showWave(waveNumber: number, waveName?: string): void {
+  public showWave(
+    waveNumber: number,
+    waveName?: string,
+    totalWaves?: number
+  ): void {
     console.log(
       `WaveStartOverlay.showWave called: Wave ${waveNumber}${
         waveName ? ` (${waveName})` : ""
-      }`
+      }${totalWaves ? ` (${waveNumber}/${totalWaves})` : ""}`
     );
 
     if (this.isVisible) {
       // If already showing, hide first then show new wave
       console.log("Overlay already visible, hiding first");
-      this.hide(() => this.showWave(waveNumber, waveName));
+      this.hide(() => this.showWave(waveNumber, waveName, totalWaves));
       return;
     }
 
-    // Update text
-    let displayText = `WAVE ${waveNumber} START!`;
+    // Update text - show "FINAL WAVE" for the last wave
+    let displayText: string;
+    if (totalWaves && waveNumber === totalWaves) {
+      displayText = "FINAL WAVE!";
+    } else {
+      displayText = `WAVE ${waveNumber} START!`;
+    }
     // if (waveName) {
     //   displayText += `\n${waveName}`;
     // }
