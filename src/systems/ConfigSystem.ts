@@ -339,7 +339,7 @@ export default class ConfigSystem {
         BOSS: {
           name: "Boss",
           speed: 20,
-          maxHp: 300,
+          maxHp: 250,
           boss: true,
           tintColor: 11534591,
         },
@@ -399,13 +399,218 @@ export default class ConfigSystem {
               type: "BASIC",
               amount: 3,
               interval: 2500,
-              delay: 4000,
+              delay: 1000,
             },
           ],
         },
-
+        {
+          name: "Second Contact",
+          enemies: [
+            {
+              type: "BASIC",
+              amount: 5,
+              interval: 1500,
+              delay: 3000,
+            },
+            {
+              type: "BASIC",
+              amount: 5,
+              interval: 1200,
+              delay: 20000,
+            },
+          ],
+        },
+        {
+          name: "Growing Threat",
+          enemies: [
+            {
+              type: "BASIC",
+              amount: 5,
+              interval: 800,
+              delay: 2000,
+            },
+            {
+              type: "FAST",
+              amount: 4,
+              interval: 2000,
+              delay: 10000,
+            },
+            {
+              type: "BASIC",
+              amount: 6,
+              interval: 2000,
+              delay: 20000,
+            },
+            {
+              type: "FAST",
+              amount: 5,
+              interval: 2000,
+              delay: 28000,
+            },
+          ],
+        },
+        {
+          name: "Full Assault",
+          enemies: [
+            {
+              type: "BASIC",
+              amount: 10,
+              interval: 600,
+              delay: 2000,
+            },
+            {
+              type: "FAST",
+              amount: 8,
+              interval: 1500,
+              delay: 8000,
+            },
+            {
+              type: "TANK",
+              amount: 3,
+              interval: 3500,
+              delay: 16000,
+            },
+          ],
+        },
+        {
+          name: "Armored Division",
+          enemies: [
+            {
+              type: "BASIC",
+              amount: 10,
+              interval: 2000,
+              delay: 2000,
+            },
+            {
+              type: "TANK",
+              amount: 3,
+              interval: 2500,
+              delay: 3000,
+            },
+          ],
+        },
+        {
+          name: "Lightning Strike",
+          enemies: [
+            {
+              type: "FAST",
+              amount: 10,
+              interval: 800,
+              delay: 2000,
+            },
+            {
+              type: "FAST",
+              amount: 10,
+              interval: 1200,
+              delay: 6000,
+            },
+          ],
+        },
+        {
+          name: "Hard 1",
+          enemies: [
+            {
+              type: "TANK",
+              amount: 7,
+              interval: 2000,
+              delay: 2000,
+            },
+            {
+              type: "FAST",
+              amount: 15,
+              interval: 1400,
+              delay: 4000,
+              energyDropRate: 0.5,
+            },
+            {
+              type: "BASIC",
+              amount: 15,
+              interval: 500,
+              delay: 12000,
+              energyDropRate: 0.5,
+            },
+          ],
+        },
+        {
+          name: "Hard 2",
+          enemies: [
+            {
+              type: "FAST",
+              amount: 20,
+              interval: 200,
+              delay: 2000,
+              energyDropRate: 0.5,
+            },
+            {
+              type: "FAST",
+              amount: 20,
+              interval: 400,
+              delay: 4000,
+              energyDropRate: 0.5,
+            },
+          ],
+        },
+        {
+          name: "Hard 3",
+          enemies: [
+            {
+              type: "TANK",
+              amount: 20,
+              interval: 2000,
+              delay: 2000,
+              energyDropRate: 0.5,
+            },
+            {
+              type: "BASIC",
+              amount: 22,
+              interval: 1200,
+              delay: 6000,
+              energyDropRate: 0.5,
+            },
+          ],
+        },
         {
           name: "Final",
+          enemies: [
+            {
+              type: "BASIC",
+              amount: 30,
+              interval: 50,
+              delay: 2000,
+              energyDropRate: 0.3,
+            },
+            {
+              type: "TANK",
+              amount: 25,
+              interval: 1500,
+              delay: 3000,
+              energyDropRate: 0.3,
+            },
+            {
+              type: "BASIC",
+              amount: 30,
+              interval: 200,
+              delay: 6000,
+              energyDropRate: 0.3,
+            },
+            {
+              type: "FAST",
+              amount: 40,
+              interval: 400,
+              delay: 16000,
+              energyDropRate: 0.3,
+            },
+            {
+              type: "FAST",
+              amount: 40,
+              interval: 450,
+              delay: 16000,
+              energyDropRate: 0.3,
+            },
+          ],
+        },
+        {
+          name: "Final Boss",
           enemies: [
             {
               type: "BOSS",

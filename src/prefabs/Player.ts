@@ -115,11 +115,13 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       if (!wasMenuVisible) {
         const actionPressed = this.inputManager.isActionJustPressed("ACTION");
         if (actionPressed) {
-          // Check if player can build at current position before showing menu
-          if (this.canBuildAtCurrentPosition()) {
+          // Check if player menu should be available at current position
+          if (this.canOpenMenuAtCurrentPosition()) {
             this.playerMenu.show(this.x, this.y);
           } else {
-            console.log("Cannot open menu - cannot build at this location!");
+            console.log(
+              "Cannot open menu - no valid actions at this location!"
+            );
           }
         }
       }
@@ -277,24 +279,24 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   /**
-   * Check if the player can build at their current position
-   * This method accesses the Level scene to check building constraints
+   * Check if the player menu should be available at their current position
+   * This method accesses the Level scene to check if player can build or sell
    */
-  private canBuildAtCurrentPosition(): boolean {
-    // Cast scene to Level to access canBuildAtPlayerPosition method
+  private canOpenMenuAtCurrentPosition(): boolean {
+    // Cast scene to Level to access canOpenMenuAtPlayerPosition method
     const levelScene = this.scene as any;
 
-    // Check if the scene has the canBuildAtPlayerPosition method (Level scene)
+    // Check if the scene has the canOpenMenuAtPlayerPosition method (Level scene)
     if (
       levelScene &&
-      typeof levelScene.canBuildAtPlayerPosition === "function"
+      typeof levelScene.canOpenMenuAtPlayerPosition === "function"
     ) {
-      return levelScene.canBuildAtPlayerPosition();
+      return levelScene.canOpenMenuAtPlayerPosition();
     }
 
     // If not in Level scene or method doesn't exist, allow menu to open
     console.warn(
-      "Cannot check build position - not in Level scene or method missing"
+      "Cannot check menu availability - not in Level scene or method missing"
     );
     return true;
   }

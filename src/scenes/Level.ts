@@ -1432,6 +1432,24 @@ export default class Level extends Phaser.Scene {
   }
 
   /**
+   * Check if the player menu should be available at their current position
+   * Menu should open if player can either build OR sell at current position
+   * Public method for external access
+   */
+  public canOpenMenuAtPlayerPosition(): boolean {
+    if (!this.player || !this.towerManager) return false;
+
+    const tileX = Math.floor(this.player.x / 32);
+    const tileY = Math.floor(this.player.y / 32);
+
+    // Menu should open if player can build OR if there's a tower to sell
+    return (
+      this.towerManager.canBuildAt(tileX, tileY) ||
+      this.towerManager.getTowerAtTile(tileX, tileY) !== null
+    );
+  }
+
+  /**
    * Get the energy system instance
    * Public method for external access
    */
