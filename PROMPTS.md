@@ -88,7 +88,9 @@ Make sure that the player menu is always drawn on top of everything, right now t
 
 ## Enemy walking
 
-1. Implement enemy walking behavior. The enemy should have a target position/vector that specifies where does it want to go, and then on every update() it should move there. As it moves it should play the animation that fits their current movement vector. 
+```
+Implement enemy walking behavior. The enemy should have a target position/vector that specifies where does it want to go, and then on every update() it should move there. As it moves it should play the animation that fits their current movement vector.
+```
 
 ## Rewindable Sprite object
 
