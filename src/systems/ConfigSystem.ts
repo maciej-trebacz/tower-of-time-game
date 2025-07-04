@@ -290,7 +290,7 @@ export default class ConfigSystem {
   private getDefaultConfig(): GameConfig {
     return {
       version: 1,
-      skipTutorial: true,
+      skipTutorial: false,
       rewindRecordingInterval: 4,
       player: {
         speed: 200,
